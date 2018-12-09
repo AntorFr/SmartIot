@@ -167,7 +167,7 @@
             delay(TimeBtw_Read);
 
             #ifdef BLE
-              BLEDevice::init("");
+              BLEDevice::init(Gateway_Name);
               BLEScan* pBLEScan = BLEDevice::getScan(); //create new scan
               MyAdvertisedBLEDeviceCallbacks myBLECallbacks;
               pBLEScan->setAdvertisedDeviceCallbacks(&myBLECallbacks);
@@ -176,7 +176,7 @@
             #endif
 
             #ifdef classicBT
-              BTDevice::init("");
+              BTDevice::init(Gateway_Name);
               BTScan* pBTScan = BTDevice::getScan(); //create new scan
               MyAdvertisedBTDeviceCallbacks myBTCallbacks;
               pBTScan->setAdvertisedDeviceCallbacks(&myBTCallbacks);
@@ -211,6 +211,14 @@
       return false;
     }
     #endif
+
+String getBTAddress(){
+  #ifdef classicBT
+    return BTDevice::getAddress().toString().c_str();
+  #elif defined (BLE)
+    return BLEDevice::getAddress().toString().c_str();
+  #endif    
+}
       
 boolean process_data(int offset, char * rest_data, char * mac_adress){
   trc(F("Creating BLE buffer"));

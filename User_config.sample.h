@@ -1,6 +1,6 @@
 
 /*-------------------VERSION----------------------*/
-#define SIot_VERSION "0.9"
+#define SIot_VERSION "1.1"
 
 #define wifi_ssid "<SSID>"
 #define wifi_password "<PASSWORD>"

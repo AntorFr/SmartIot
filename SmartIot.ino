@@ -6,6 +6,9 @@
 #ifdef Watering
   #include "config_Watering.h"
 #endif 
+#ifdef LED
+  #include "config_LED.h"
+#endif 
 #ifdef Roombot_wifi
   #include "Roombot_wifi.h"
 #endif 
@@ -211,6 +214,9 @@ void setup() {
   #ifdef Roombot_wifi
     setupRoombot_wifi();
   #endif
+  #ifdef LED
+    setupLED();
+  #endif
     
   trc(F("MQTT_MAX_PACKET_SIZE"));
   trc(MQTT_MAX_PACKET_SIZE);
@@ -250,6 +256,13 @@ void loop() {
   timerWrite(timer, 0);
   #endif
 
+  #ifdef LED
+    #ifdef LED_AUDIO
+    read_audio()
+    #endif
+    display_led()
+  #endif
+  
   //MQTT client connexion management
   if (!client.connected()) { // not connected
 
@@ -289,11 +302,6 @@ void loop() {
 
     stateMeasures(false);
   }
-
-  #ifdef ESP32
-  //trc(F("Loop time is = "));
-  //trc(millis() - now);
-  #endif
 }
 
 void heartbeat(bool pub_verbose) {
@@ -321,6 +329,10 @@ void heartbeat(bool pub_verbose) {
   trc(SSID);
   trc("Activated modules");
   String modules = "";
+
+  #ifdef BT
+   SYSdata["bt_id"] = getBTAddress();
+  #endif
 
   #ifdef BT
     modules = modules + BT;
@@ -393,6 +405,9 @@ void receivingMQTT(char * topicOri, char * datacallback) {
       #endif
       #ifdef Roombot_wifi
        MQTTtoRoombot_wifi(topicOri, jsondata);
+      #endif
+      #ifdef LED
+       MQTTtoLED(topicOri, jsondata);
       #endif
      #endif 
   }
