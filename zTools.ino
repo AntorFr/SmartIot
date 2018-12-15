@@ -141,10 +141,9 @@ bool to_bool(String const& s) { // thanks Chris Jester-Young from stackoverflow
 
 
 void pub(char * topic, char * payload, boolean retainFlag){
-  if (client.connected()) {
-    client.publish(topic, payload, retainFlag);
-  } else {
-      trc(F("MQTT Disconected"));
+  bool res = client.publish(topic, payload, retainFlag);
+  if (!res) {
+      trc(F("> Error - MQTT Disconected"));
     }
 }
 
@@ -192,103 +191,92 @@ void pub(char * topicori, JsonObject& data){
 }
 
 void pub(char * topic, char * payload){
-    if (client.connected()) {
-      client.publish(topic, payload);
-    } else {
-      trc(F("MQTT Disconected"));
+    bool res = client.publish(topic, payload);
+    if (!res) {
+      trc(F("> Error - MQTT Disconected"));
     }
 }
 
 void pub(char * topic, String payload){
-    if (client.connected()) {
-      client.publish(topic,(char *)payload.c_str());
-    } else {
-      trc(F("MQTT Disconected"));
+    bool res = client.publish(topic,(char *)payload.c_str());
+    if (!res) {
+      trc(F("> Error - MQTT Disconected"));
     }
 }
 
 void pub(String topic, String payload){
-    if (client.connected()) {
-      client.publish((char *)topic.c_str(),(char *)payload.c_str());
-    } else {
-      trc(F("MQTT Disconected"));
+    bool res = client.publish((char *)topic.c_str(),(char *)payload.c_str());
+    if (!res) {
+      trc(F("> Error - MQTT Disconected"));
     }
 }
 
 void pub(String topic, char *  payload){
-    if (client.connected()) {
-      client.publish((char *)topic.c_str(),payload);
-    } else {
-      trc(F("MQTT Disconected"));
+    bool res = client.publish((char *)topic.c_str(),payload);
+    if (!res) {
+      trc(F("> Error - MQTT Disconected"));
     }
 }
 
 void pub(String topic, int payload){
     char val[12];
     sprintf(val, "%d", payload);
-    if (client.connected()) {
-      client.publish((char *)topic.c_str(),val);
-    } else {
-      trc(F("MQTT Disconected"));
+    bool res = client.publish((char *)topic.c_str(),val);
+    if (!res) {
+      trc(F("> Error - MQTT Disconected"));
     }
 }
 
 void pub(String topic, float payload){
     char val[12];
     dtostrf(payload,3,1,val);
-    if (client.connected()) {
-      client.publish((char *)topic.c_str(),val);
-    } else {
-      trc(F("MQTT Disconected"));
+    bool res = client.publish((char *)topic.c_str(),val);
+    if (!res) {
+      trc(F("> Error - MQTT Disconected"));
     }
 }
 
 void pub(char * topic, float payload){
     char val[12];
     dtostrf(payload,3,1,val);
-    if (client.connected()) {
-      client.publish(topic,val);
-    } else {
-      trc(F("MQTT Disconected"));
+    bool res = client.publish(topic,val);
+    if (!res) {
+      trc(F("> Error - MQTT Disconected"));
     }
 }
 
 void pub(char * topic, int payload){
     char val[6];
     sprintf(val, "%d", payload);
-    if (client.connected()) {
-      client.publish(topic,val);
-    } else {
-      trc(F("MQTT Disconected"));
+    bool res = client.publish(topic,val);
+    if (!res) {
+      trc(F("> Error - MQTT Disconected"));
     }
 }
 
 void pub(char * topic, unsigned int payload){
     char val[6];
     sprintf(val, "%u", payload);
-    if (client.connected()) {
-      client.publish(topic,val);
-    } else {
-      trc(F("MQTT Disconected"));
+    bool res = client.publish(topic,val);
+    if (!res) {
+      trc(F("> Error - MQTT Disconected"));
     }
 }
 
 void pub(char * topic, unsigned long payload){
     char val[11];
     sprintf(val, "%lu", payload);
-    if (client.connected()) {
-      client.publish(topic,val);
-    } else {
-      trc(F("MQTT Disconected"));
+    bool res = client.publish(topic,val);
+    if (!res) {
+      trc(F("> Error - MQTT Disconected"));
     }
 }
 
 void pub(String topic, unsigned long payload){
     char val[11];
     sprintf(val, "%lu", payload);
-    if (client.connected()) {
-      client.publish((char *)topic.c_str(),val);
-    } else {
-      trc(F("MQTT Disconected"));
+    bool res = client.publish((char *)topic.c_str(),val);
+    if (!res) {
+      trc(F("> Error - MQTT Disconected"));
     }
 }

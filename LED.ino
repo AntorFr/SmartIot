@@ -6,12 +6,16 @@
   const int Led_lenght = LED_COUNT / SYMETRICAL;
   
   unsigned long timeLED = 0; // When the sensor was last read   
+
+  Adafruit_NeoPixel strip = Adafruit_NeoPixel(LED_COUNT, STRIPPIN, NEO_RGB + NEO_KHZ800); //NEO_GRB //NEO_RGB
   
   String motif = String(50);//LED status flag
   int ledspeed = 30;
   int RGB[3] = {0,0,0};
       
   #ifdef LED_AUDIO
+    static float volume_filter = 1;
+    int volume;
     static float volume_moy= 1;
     unsigned long timeLED_AUDIO = 0;
   #endif
@@ -21,6 +25,9 @@
       pinMode(AUDIO_AIN, INPUT);
       pinMode(AUDIO_DIN, OUTPUT);
     #endif
+
+    strip.begin();
+    strip.show(); // Initialize all pixels to 'off'
   
     motif = "noir";
     all_off();
@@ -29,16 +36,19 @@
   
   void MQTTtoLED(char * topicOri, JsonObject& LEDData){
       String topic = topicOri;
-      if (topic == subjectMQTTtoWatering){
-        const char* sensor = newjson["motif"];
+      if (topic == subjectMQTTtoLED || topic == subjectMQTTtoAllLED){
+        trc(F("New LED commande received"));
+        const char* sensor = LEDData["motif"];
         motif = String(sensor);
-        ledspeed = int(newjson["speed"]);
-        RGB[0] = newjson["RGB"][0];
-        RGB[1] = newjson["RGB"][1];
-        RGB[2] = newjson["RGB"][2];
+        ledspeed = int(LEDData["speed"]);
+        RGB[0] = LEDData["RGB"][0];
+        RGB[1] = LEDData["RGB"][1];
+        RGB[2] = LEDData["RGB"][2];
         timeLED = 0;
         noir();
-        pub(subjectWateringtoMQTT, Wateringdata);
+        timeLED = 0;
+        trc(F("LED configured"));
+        pub(subjecLEDtoMQTT, LEDData);
       }
   }
 
@@ -48,7 +58,7 @@
       if (now > (timeLED_AUDIO + 5)) {
         timeLED_AUDIO = now;
         volume = analogRead(AUDIO_AIN);
-        volume_filter = (volume * (1 - filterVal)) + (volume_filter * filterVal);
+        volume_filter = (volume * (1 - LED_filterVal)) + (volume_filter * LED_filterVal);
       }
   }
   #endif
@@ -82,15 +92,15 @@
         Etoile(RGB[0], RGB[1], RGB[2],ledspeed);
     } else if (motif == "Fire") {
         fire(RGB[0], RGB[1], RGB[2],ledspeed);
-    #ifdef AUDIO
-    } else if (motif == "Audio_color" && AUDIO) {
-        color_sound(RGB[0], RGB[1], RGB[2],ledspeed,LED_volume_filter);
-    } else if (motif == "Audio_laser" && AUDIO) {
-        Laser_sound(strip.Color(RGB[0], RGB[1], RGB[2]),ledspeed,LED_volume_filter);
-    }else if (motif == "Audio_K2000" && AUDIO) {
-        K2000_sound(strip.Color(RGB[0], RGB[1], RGB[2]),ledspeed,LED_volume_filter,false);
-    }else if (motif == "Audio_K2000_variation" && AUDIO) {
-        K2000_variation_sound(ledspeed,LED_volume_filter,true);
+    #ifdef LED_AUDIO
+    } else if (motif == "Audio_color") {
+        color_sound(RGB[0], RGB[1], RGB[2],ledspeed,volume_filter);
+    } else if (motif == "Audio_laser") {
+        Laser_sound(strip.Color(RGB[0], RGB[1], RGB[2]),ledspeed,volume_filter);
+    }else if (motif == "Audio_K2000") {
+        K2000_sound(strip.Color(RGB[0], RGB[1], RGB[2]),ledspeed,volume_filter,false);
+    }else if (motif == "Audio_K2000_variation") {
+        K2000_variation_sound(ledspeed,volume_filter,true);
     #endif
     } else {
         noir();

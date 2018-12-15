@@ -19,8 +19,8 @@
 /*------------------------------------------------------------------------*/
 
 // array to store previous received RFs, IRs codes and their timestamps
-#define MQTT_MAX_PACKET_SIZE 1024
-#define array_size 12
+#define MQTT_MAX_PACKET_SIZE 1024 //useless change directly into pubsub.h https://github.com/knolleary/pubsubclient/issues/110
+#define array_size 12 
 unsigned long ReceivedSignal[array_size][2] ={{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
 
 //adding this to bypass the problem of the arduino builder issue 50
@@ -31,7 +31,7 @@ int failure_number = 0; // number of failure connecting to MQTT
 
 #ifdef ESP32
   #include <WiFi.h>
-//#include <WiFiUdp.h>
+  #include <WiFiUdp.h>
   #include "esp_system.h"
 #elif defined(ESP8266)
   #include <ESP8266WiFi.h>
@@ -73,7 +73,7 @@ unsigned long timer_sys_measures = 0;
 #elif defined(ESP8266)
   void resetModule() {
     ets_printf("reboot\n");
-    esp_restart();
+    ESP.restart();
   }
 #endif
 
@@ -138,8 +138,8 @@ void setup() {
   Serial.begin(SERIAL_BAUD);
 
   #ifdef ESP8266
-  Serial.end();
-  Serial.begin(SERIAL_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);// enable on ESP8266 to free some pin
+  //Serial.end();
+  //Serial.begin(SERIAL_BAUD, SERIAL_8N1, SERIAL_TX_ONLY);// enable on ESP8266 to free some pin
   #endif
 
   #ifdef ESP32
@@ -258,9 +258,9 @@ void loop() {
 
   #ifdef LED
     #ifdef LED_AUDIO
-    read_audio()
+    read_audio();
     #endif
-    display_led()
+    display_led();
   #endif
   
   //MQTT client connexion management
@@ -333,7 +333,10 @@ void heartbeat(bool pub_verbose) {
   #ifdef BT
    SYSdata["bt_id"] = getBTAddress();
   #endif
-
+  
+  #ifdef LED
+    modules = modules + LED;
+  #endif
   #ifdef BT
     modules = modules + BT;
   #endif

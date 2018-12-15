@@ -38,11 +38,11 @@
           String mactopic = subjectBTtoMQTT + mac_adress;
           if (advertisedDevice.haveName()){
               BLEdata["name"] = (char *)advertisedDevice.getName().c_str();
-          }
+          }/*
           if (advertisedDevice.haveManufacturerData()){
               BLEdata["manufacturerdata"] = (char *)advertisedDevice.getManufacturerData().c_str();
               
-          }
+          }*/
           if (advertisedDevice.haveRSSI()){
               BLEdata["rssi"] = (int)advertisedDevice.getRSSI();
               #ifdef subjectHomePresence
@@ -74,7 +74,7 @@
               char service_data[returnedString.length()+1];
               returnedString.toCharArray(service_data,returnedString.length()+1);
               service_data[returnedString.length()] = '\0';
-              BLEdata["servicedata"] = service_data;
+              //BLEdata["servicedata"] = service_data;
 
               BLEdata["servicedatauuid"] =  (char *)advertisedDevice.getServiceDataUUID().toString().c_str();
 
@@ -122,11 +122,11 @@
           String mactopic = subjectBTtoMQTT + mac_adress;
           if (advertisedDevice.haveName()){
               BTdata["name"] = (char *)advertisedDevice.getName().c_str();
-          }
+          }/*
           if (advertisedDevice.haveManufacturerData()){
               BTdata["manufacturerdata"] = (char *)advertisedDevice.getManufacturerData().c_str();
               
-          }
+          }*/
           if (advertisedDevice.haveRSSI()){
               BTdata["rssi"] = (int)advertisedDevice.getRSSI();
               #ifdef subjectHomePresence

@@ -403,7 +403,7 @@
              etoiles[i] = 255 ;
           }
         }
-        if (i==0){Serial.println(etoiles[i]);}
+        //if (i==0){Serial.println(etoiles[i]);}
         if (etoiles[i] > 0) {
           float intensit = -1*pow(etoiles[i]/80.1,2);
           strip.setPixelColor(i, strip.Color(
