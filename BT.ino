@@ -35,6 +35,9 @@
           BLEdata["id"] = mac_adress;
           mac_adress.replace(":","");
           mac_adress.toUpperCase();
+
+          BLEdata["bt_type"] = "BLE";
+          
           String mactopic = subjectBTtoMQTT + mac_adress;
           if (advertisedDevice.haveName()){
               BLEdata["name"] = (char *)advertisedDevice.getName().c_str();
@@ -119,6 +122,9 @@
           BTdata["id"] = mac_adress;
           mac_adress.replace(":","");
           mac_adress.toUpperCase();
+
+          BLEdata["bt_type"] = "CBT";
+          
           String mactopic = subjectBTtoMQTT + mac_adress;
           if (advertisedDevice.haveName()){
               BTdata["name"] = (char *)advertisedDevice.getName().c_str();
