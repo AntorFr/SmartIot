@@ -123,7 +123,7 @@
           mac_adress.replace(":","");
           mac_adress.toUpperCase();
 
-          BLEdata["bt_type"] = "CBT";
+          BTdata["bt_type"] = "CBT";
           
           String mactopic = subjectBTtoMQTT + mac_adress;
           if (advertisedDevice.haveName()){
