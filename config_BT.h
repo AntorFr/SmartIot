@@ -1,5 +1,5 @@
 
-#define subjectBTtoMQTT  Base_Topic "BT/" Gateway_Name "/"
+#define subjectBTtoMQTT  Base_Topic "sensors/"
 #define TimeBtw_Read 2000 //55555 //define the time between 2 scans
 #define Scan_duration 20 //define the time for a scan
 

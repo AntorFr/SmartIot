@@ -7,7 +7,7 @@
   
   unsigned long timeLED = 0; // When the sensor was last read   
 
-  Adafruit_NeoPixel strip = Adafruit_NeoPixel(LED_COUNT, STRIPPIN, NEO_RGB + NEO_KHZ800); //NEO_GRB //NEO_RGB
+  Adafruit_NeoPixel strip = Adafruit_NeoPixel(LED_COUNT, STRIPPIN, NEO_GRB + NEO_KHZ800); //NEO_GRB //NEO_RGB
   
   String motif = String(50);//LED status flag
   int ledspeed = 30;

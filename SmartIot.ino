@@ -11,6 +11,9 @@
 #endif 
 #ifdef Roombot_wifi
   #include "Roombot_wifi.h"
+#endif
+#ifdef AmbientLight
+  #include "config_Ambient_Light.h"
 #endif 
 
 #include <PubSubClient.h>
@@ -217,6 +220,10 @@ void setup() {
   #ifdef LED
     setupLED();
   #endif
+  #ifdef AmbientLight
+    setupZAmbientLight();
+  #endif
+
     
   trc(F("MQTT_MAX_PACKET_SIZE"));
   trc(MQTT_MAX_PACKET_SIZE);
@@ -299,7 +306,9 @@ void loop() {
     #ifdef Watering
       WateringtoMQTT();
     #endif
-
+    #ifdef AmbientLight
+      MeasureLightIntensity();
+    #endif
     stateMeasures(false);
   }
 }
@@ -346,6 +355,9 @@ void heartbeat(bool pub_verbose) {
   #ifdef Roombot_wifi
     modules = modules + Roombot_wifi;
   #endif      
+  #ifdef AmbientLight
+    modules = modules + AmbientLight;
+  #endif 
   
   SYSdata["modules"] = modules;
   trc(modules);

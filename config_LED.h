@@ -1,4 +1,3 @@
-
 #define STRIPPIN D1
 #define AUDIO_AIN A0
 #define AUDIO_DIN D4

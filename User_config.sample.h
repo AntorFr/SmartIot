@@ -13,6 +13,8 @@
 #define BT     "BT"  
 //#define Watering  "Watering"  
 //#define Roombot_wifi "Roombot_wifi"
+//#define LED "LED"
+//#define AmbientLight "AmbientLight"
 /*-------------------ACTIVATE TRACES----------------------*/
 #define TRACE 1  // commented =  trace off, uncommented = trace on
 
