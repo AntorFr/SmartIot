@@ -280,3 +280,44 @@ void pub(String topic, unsigned long payload){
       trc(F("> Error - MQTT Disconected"));
     }
 }
+
+#ifdef ESP32
+void DesableBLE(){
+  esp_bluedroid_disable();
+  esp_bluedroid_deinit();
+}
+
+void DesableBTC(){
+   esp_bt_controller_disable();
+   esp_bt_controller_deinit();
+}
+
+void DesableBT(){
+   DesableBLE();
+   DesableBTC();
+}
+#endif //ESP32
+
+void DesableWifi(){
+ #ifdef ESP32
+  esp_wifi_stop();
+ #elif defined(ESP8266) 
+  WiFi.mode(WIFI_OFF);
+ #endif
+}
+
+void DesableNetwork(){
+  #ifdef ESP32
+  DesableBT();
+  #endif //ESP32
+  DesableWifi();
+}
+
+void DeepSleep(int duration){
+ #ifdef ESP32
+  esp_sleep_enable_timer_wakeup(duration * uS_TO_S_FACTOR);
+  esp_deep_sleep_start();
+ #elif defined(ESP8266) 
+  ESP.deepSleep(duration * uS_TO_S_FACTOR);
+ #endif
+}

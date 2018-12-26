@@ -221,7 +221,7 @@ void setup() {
     setupLED();
   #endif
   #ifdef AmbientLight
-    setupZAmbientLight();
+    setupAmbientLight();
   #endif
 
     

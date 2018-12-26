@@ -3,7 +3,7 @@
 #include "math.h" // Library for trig and exponential functions
 #include "Wire.h" // Library for communication with I2C / TWI devices
 
-void setupZAmbientLight()
+void setupAmbientLight()
 {
   Wire.begin();
   Wire.beginTransmission(BH1750_i2c_addr);
