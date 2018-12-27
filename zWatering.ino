@@ -90,6 +90,7 @@ void RequestWaterNeed(){
 
 }
 
+#ifdef watering_deep_sleep 
 void GoToSleep(){
   trc(F("Warn GoToSleep"));
 
@@ -105,6 +106,7 @@ void GoToSleep(){
   serializeJson(ReqData, JSONmessageBuffer);
   pub(subjectWateringtoMQTT,JSONmessageBuffer);
 }
+#endif
 
 #ifdef simplePublishing
   void MQTTtoWatering(char * topicOri, char * datacallback){
