@@ -153,7 +153,6 @@ void setup() {
   #endif
   
   setup_wifi();
-
   trc(F("SmartIoT mac: "));
   trc(WiFi.macAddress()); 
 
@@ -203,9 +202,13 @@ void setup() {
    client.setServer(mqtt_server, port);
    trc(mqtt_server);
   #endif
-
   client.setCallback(callback);
   delay(1500);
+
+  if (!client.connected()) {
+    reconnect();
+    delay(1500);
+  }
   lastReconnectAttempt = 0;
 
   #ifdef BT

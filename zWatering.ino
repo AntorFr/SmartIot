@@ -69,6 +69,7 @@ void Watering_deepsleep(){
   trc(WATER_TIME_TO_SLEEP);
   
   GoToSleep(); //Warn MQTT
+  delay(150);
   DesableNetwork(); //Shutdown Wifi and BT before going to sleep
   DeepSleep(WATER_TIME_TO_SLEEP);
 

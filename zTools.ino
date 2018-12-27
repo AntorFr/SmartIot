@@ -300,7 +300,8 @@ void DesableBT(){
 
 void DesableWifi(){
  #ifdef ESP32
-  esp_wifi_stop();
+  //esp_wifi_stop();
+  WiFi.mode(WIFI_OFF);
  #elif defined(ESP8266) 
   WiFi.mode(WIFI_OFF);
  #endif
