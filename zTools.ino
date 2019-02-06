@@ -281,7 +281,7 @@ void pub(String topic, unsigned long payload){
     }
 }
 
-#ifdef ESP32
+#if defined(ESP32) && defined(BT)
 void DesableBLE(){
   esp_bluedroid_disable();
   esp_bluedroid_deinit();
@@ -308,7 +308,7 @@ void DesableWifi(){
 }
 
 void DesableNetwork(){
-  #ifdef ESP32
+  #if defined(ESP32) && defined(BT)
   DesableBT();
   #endif //ESP32
   DesableWifi();

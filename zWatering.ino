@@ -67,11 +67,14 @@ void Watering_deepsleep(){
   
   trc(F("Setup SmartIot to sleep for (seconds) : "));
   trc(WATER_TIME_TO_SLEEP);
-  
+
+  digitalWrite(WaterPIN, LOW);
   GoToSleep(); //Warn MQTT
   delay(150);
+
   DesableNetwork(); //Shutdown Wifi and BT before going to sleep
   DeepSleep(WATER_TIME_TO_SLEEP);
+
 
 }
 #endif //watering_deep_sleep
