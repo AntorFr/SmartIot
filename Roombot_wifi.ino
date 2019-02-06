@@ -102,12 +102,19 @@ bool Send_Config(){
   bool send_ok = false;
 
   String url = "http://";
-  url += WiFi.gatewayIP(); 
+  url += WiFi.gatewayIP().toString(); 
   url +="/configure.json";
+
+  trc(url);
   
   http.begin(url);
-  //http.addHeader("Content-Type", "text/plain");
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
   int httpResponseCode = http.POST(roombot_configString);
+  trc(httpResponseCode);   //Print return code
+
+  String response = http.getString(); 
+  trc(response);  //Print request answer
+  
   if(httpResponseCode>0){
     String response = http.getString();                       //Get the response to the request
     trc(httpResponseCode);   //Print return code
