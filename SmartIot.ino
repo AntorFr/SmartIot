@@ -15,6 +15,10 @@
 #ifdef AmbientLight
   #include "config_Ambient_Light.h"
 #endif 
+#ifdef Impulse
+  #include "config_Impulse.h"
+#endif 
+
 
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
@@ -226,6 +230,9 @@ void setup() {
   #ifdef AmbientLight
     setupAmbientLight();
   #endif
+  #ifdef Impulse
+    setupImpulse();
+  #endif 
 
     
   trc(F("MQTT_MAX_PACKET_SIZE"));
@@ -360,6 +367,9 @@ void heartbeat(bool pub_verbose) {
   #endif      
   #ifdef AmbientLight
     modules = modules + AmbientLight;
+  #endif
+  #ifdef Impulse
+    modules = modules + Impulse;
   #endif 
   
   SYSdata["modules"] = modules;

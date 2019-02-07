@@ -140,14 +140,15 @@ bool to_bool(String const& s) { // thanks Chris Jester-Young from stackoverflow
 }
 
 
-void pub(char * topic, char * payload, boolean retainFlag){
+bool pub(char * topic, char * payload, boolean retainFlag){
   bool res = client.publish(topic, payload, retainFlag);
   if (!res) {
       trc(F("> Error - MQTT Disconected"));
     }
+  return res;
 }
 
-void pub(char * topicori, JsonObject& data){
+bool pub(char * topicori, JsonObject& data){
     String topic = topicori;
     #ifdef valueAsASubject
       unsigned long value = data["value"];
@@ -162,7 +163,7 @@ void pub(char * topicori, JsonObject& data){
       trc(topic);
       serializeJson(data, JSONmessageBuffer);
       trc(JSONmessageBuffer);
-      pub(topic, JSONmessageBuffer);
+      return pub(topic, JSONmessageBuffer);
     #endif
 
     #ifdef simplePublishing
@@ -173,112 +174,123 @@ void pub(char * topicori, JsonObject& data){
           trc(p.key().c_str());
           trc(p.value().as<unsigned long>());
           if (strcmp(p.key().c_str(), "value") == 0){ // if data is a value we don't integrate the name into the topic
-            pub(topic,p.value().as<unsigned long>());
+            return pub(topic,p.value().as<unsigned long>());
           }else{ // if data is not a value we integrate the name into the topic
-            pub(topic + "/" + p.key().c_str(),p.value().as<unsigned long>());
+            return pub(topic + "/" + p.key().c_str(),p.value().as<unsigned long>());
           }
         } else if (p.value().is<float>()) {
           trc(p.key().c_str());
           trc(p.value().as<float>());
-          pub(topic + "/" + p.key().c_str(),p.value().as<float>());
+          return pub(topic + "/" + p.key().c_str(),p.value().as<float>());
         } else if (p.value().is<char*>()) {
           trc(p.key().c_str());
           trc(p.value().as<const char*>());
-          pub(topic + "/" + p.key().c_str(),p.value().as<const char*>());
+          return pub(topic + "/" + p.key().c_str(),p.value().as<const char*>());
         }
       }
     #endif
 }
 
-void pub(char * topic, char * payload){
+bool pub(char * topic, char * payload){
     bool res = client.publish(topic, payload);
     if (!res) {
       trc(F("> Error - MQTT Disconected"));
     }
+    return res;
 }
 
-void pub(char * topic, String payload){
+bool pub(char * topic, String payload){
     bool res = client.publish(topic,(char *)payload.c_str());
     if (!res) {
       trc(F("> Error - MQTT Disconected"));
     }
+    return res;
 }
 
-void pub(String topic, String payload){
+bool pub(String topic, String payload){
     bool res = client.publish((char *)topic.c_str(),(char *)payload.c_str());
     if (!res) {
       trc(F("> Error - MQTT Disconected"));
     }
+    return res;
 }
 
-void pub(String topic, char *  payload){
+bool pub(String topic, char *  payload){
     bool res = client.publish((char *)topic.c_str(),payload);
     if (!res) {
       trc(F("> Error - MQTT Disconected"));
     }
+    return res;
 }
 
-void pub(String topic, int payload){
+bool pub(String topic, int payload){
     char val[12];
     sprintf(val, "%d", payload);
     bool res = client.publish((char *)topic.c_str(),val);
     if (!res) {
       trc(F("> Error - MQTT Disconected"));
     }
+    return res;
 }
 
-void pub(String topic, float payload){
+bool pub(String topic, float payload){
     char val[12];
     dtostrf(payload,3,1,val);
     bool res = client.publish((char *)topic.c_str(),val);
     if (!res) {
       trc(F("> Error - MQTT Disconected"));
     }
+    return res;
 }
 
-void pub(char * topic, float payload){
+bool pub(char * topic, float payload){
     char val[12];
     dtostrf(payload,3,1,val);
     bool res = client.publish(topic,val);
     if (!res) {
       trc(F("> Error - MQTT Disconected"));
     }
+    return res;
 }
 
-void pub(char * topic, int payload){
+bool pub(char * topic, int payload){
     char val[6];
     sprintf(val, "%d", payload);
     bool res = client.publish(topic,val);
     if (!res) {
       trc(F("> Error - MQTT Disconected"));
     }
+    return res;
 }
 
-void pub(char * topic, unsigned int payload){
+bool pub(char * topic, unsigned int payload){
     char val[6];
     sprintf(val, "%u", payload);
     bool res = client.publish(topic,val);
     if (!res) {
       trc(F("> Error - MQTT Disconected"));
     }
+    return res;
 }
 
-void pub(char * topic, unsigned long payload){
+bool pub(char * topic, unsigned long payload){
     char val[11];
     sprintf(val, "%lu", payload);
     bool res = client.publish(topic,val);
     if (!res) {
       trc(F("> Error - MQTT Disconected"));
     }
+    return res;
 }
 
-void pub(String topic, unsigned long payload){
+bool pub(String topic, unsigned long payload){
     char val[11];
     sprintf(val, "%lu", payload);
     bool res = client.publish((char *)topic.c_str(),val);
     if (!res) {
       trc(F("> Error - MQTT Disconected"));
     }
+    return res;
 }
 
 #if defined(ESP32) && defined(BT)
