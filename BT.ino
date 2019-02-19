@@ -147,7 +147,20 @@
     #endif
 
     void setupBT(){
-        C
+        #ifdef multiCore
+        // we setup a task with priority one to avoid conflict with other gateways
+        xTaskCreatePinnedToCore(
+                          coreTask,   /* Function to implement the task */
+                          "coreTask", /* Name of the task */
+                          10000,      /* Stack size in words */
+                          NULL,       /* Task input parameter */
+                          1,          /* Priority of the task */
+                          NULL,       /* Task handle. */
+                          taskCore);  /* Core where the task should run */
+          trc(F("SmartIoT BT multicore ESP32 setup done "));
+        #else
+          trc(F("SmartIoT BT singlecore ESP32 setup done "));
+        #endif
     }
     
     #ifdef multiCore

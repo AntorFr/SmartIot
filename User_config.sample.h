@@ -6,15 +6,18 @@
 #define wifi_password "<PASSWORD>"
 
 #define Gateway_Room "<ROOM_NAME>"
-#define Gateway_Name "SmartIoT_" Gateway_Room
+#define Gateway_Sensor "<SENSOR_NAME>"
+#define Gateway_Name "SmartIoT_" Gateway_Room "_" Gateway_Sensor
 
 
 //*-------------DEFINE THE MODULES ----------------*/
-#define BT     "BT"  
+//#define BT     "BT"  
 //#define Watering  "Watering"  
 //#define Roombot_wifi "Roombot_wifi"
 //#define LED "LED"
 //#define AmbientLight "AmbientLight"
+//#define Impulse "Impulse"
+//#define ZsensorDS18XX "ZsensorDS18XX"
 /*-------------------ACTIVATE TRACES----------------------*/
 #define TRACE 1  // commented =  trace off, uncommented = trace on
 

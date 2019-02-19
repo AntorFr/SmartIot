@@ -42,7 +42,9 @@ volatile unsigned long LastMicros;
 
 void pulseHandler() {
   if((long)(micros() - LastMicros) >= DEBOUNCE_MS * 1000) {
-    Pulses = Pulses + 1;
+    if (digitalRead(IMPULSEPIN) == HIGH) {
+      Pulses = Pulses + 1;
+    }
     LastMicros = micros();
     //trc(F("Impulse detected"));
   }
@@ -67,11 +69,10 @@ bool sendImpluse(){
     StaticJsonDocument<JSON_MSG_BUFFER> jsonBuffer;
     JsonObject Impulsedata = jsonBuffer.to<JsonObject>();
 
-    Impulsedata["impulse"] = PulsesKept/2; //(interupt raise for each edge > https://github.com/espressif/arduino-esp32/issues/1111 )
+    Impulsedata["impulse"] = PulsesKept; //(interupt raise for each edge > https://github.com/espressif/arduino-esp32/issues/1111 )
     Impulsedata["duration"] = PulsesPeriods * IMPULSE_SAMPLE;
     Impulsedata["periodes"] = PulsesPeriods;
     
-
     return pub(subjectImpulseoMQTT,Impulsedata);
   
   
@@ -88,11 +89,11 @@ void coreTask( void * pvParameters ){
 
       if (tickOccured == true) {
         trc(F("Tick occured. Pulses kept so far: "));
-
         if (PulsesKept > 0) {
-          if (sendImpluse()) {
+          if(sendImpluse()) {
             trc(F("Impulse MQTT publish ok"));
             PulsesKept = 0;
+            PulsesPeriods = 0;
           }
         } else {
           PulsesPeriods = 0;

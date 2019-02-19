@@ -18,6 +18,9 @@
 #ifdef Impulse
   #include "config_Impulse.h"
 #endif 
+#ifdef ZsensorDS18XX
+  #include "config_DS18xx.h"
+#endif 
 
 
 #include <PubSubClient.h>
@@ -319,6 +322,9 @@ void loop() {
     #ifdef AmbientLight
       MeasureLightIntensity();
     #endif
+    #ifdef ZsensorDS18XX
+      MeasureTemp();
+    #endif
     stateMeasures(false);
   }
 }
@@ -370,6 +376,9 @@ void heartbeat(bool pub_verbose) {
   #endif
   #ifdef Impulse
     modules = modules + Impulse;
+  #endif 
+  #ifdef ZsensorDS18XX
+    modules = modules + ZsensorDS18XX;
   #endif 
   
   SYSdata["modules"] = modules;
