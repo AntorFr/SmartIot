@@ -1,4 +1,4 @@
-#define TimeBetweenReadingOW 30000
+#define TimeBetweenReadingOW 10000
 #define subjectDS18XXtoMQTT  Base_Topic "sensors/" Gateway_Room "/" Gateway_Sensor "/temp" 
 #define OWPIN D7
 

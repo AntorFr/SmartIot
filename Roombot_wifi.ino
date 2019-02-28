@@ -24,7 +24,7 @@ void MQTTtoRoombot_wifi(char * topicOri){
   if (topic == subjectMQTTtoRoombot){
     // we acknowledge the sending by publishing the value to an acknowledgement topic
     trc(F("> Config Roombot Start"));
-    pub(subjectRoombottoMQTT, F("{\"log\": \"Start config roombot\"}"));
+    pub(strlwr(subjectRoombottoMQTT), F("{\"log\": \"Start config roombot\"}"));
     config_roombot();
   }
 }
@@ -34,7 +34,7 @@ void config_roombot(){
     trc(F("** Roombot SSID not found **"));
     setup_wifi();
     reconnect();
-    pub(subjectRoombottoMQTT, F("{\"log\": \"Error - Roombot SSID not found\"}"));
+    pub(strlwr(subjectRoombottoMQTT), F("{\"log\": \"Error - Roombot SSID not found\"}"));
     return;
   }
   
@@ -42,7 +42,7 @@ void config_roombot(){
     trc(F("** Error for connect to Roombot wifi **"));
     setup_wifi();
     reconnect();
-    pub(subjectRoombottoMQTT, F("{\"log\": \"Error - Roombot connecting Roombot wifi\"}"));
+    pub(strlwr(subjectRoombottoMQTT), F("{\"log\": \"Error - Roombot connecting Roombot wifi\"}"));
     return;
   }
   
@@ -50,14 +50,14 @@ void config_roombot(){
     trc(F("** Error for connect to Roombot wifi **"));
     setup_wifi();
     reconnect();
-    pub(subjectRoombottoMQTT, F("{\"log\": \"Error - Roombot sending Config\"}"));
+    pub(strlwr(subjectRoombottoMQTT), F("{\"log\": \"Error - Roombot sending Config\"}"));
     return;
   } 
   
   trc(F("** Config sent **"));
   setup_wifi();
   reconnect();
-  pub(subjectRoombottoMQTT, F("{\"log\": \"OK - Config sent\"}"));    
+  pub(strlwr(subjectRoombottoMQTT), F("{\"log\": \"OK - Config sent\"}"));    
 }
 
 bool Search_Roombot_SSID() {

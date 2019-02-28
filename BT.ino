@@ -38,7 +38,7 @@
 
           BLEdata["bt_type"] = "BLE";
           
-          String mactopic = subjectBTtoMQTT + mac_adress;
+          String mactopic = strlwr(subjectBTtoMQTT) + mac_adress;
           if (advertisedDevice.haveName()){
               BLEdata["name"] = (char *)advertisedDevice.getName().c_str();
           }/*
@@ -81,7 +81,9 @@
 
               BLEdata["servicedatauuid"] =  (char *)advertisedDevice.getServiceDataUUID().toString().c_str();
 
-              pub((char *)mactopic.c_str(),BLEdata);
+              if(PubishRowServiceData) {
+                pub((char *)mactopic.c_str(),BLEdata);
+              }
 
               if (strstr(BLEdata["servicedatauuid"].as<char*>(),"fe95") != NULL) {
                 trc(F("Processing BLE device data"));
@@ -259,7 +261,7 @@ boolean process_data(int offset, char * rest_data, char * mac_adress){
   char val[12];
 
   String mactopic(mac_adress);
-  mactopic = subjectBTtoMQTT + mactopic;
+  mactopic = strlwr(subjectBTtoMQTT) + mactopic;
 
   // second value
   char val2[12];
@@ -328,7 +330,7 @@ void haRoomPresence(JsonObject& HomePresence){
   double distance = (0.89)* pow(ratio,7.7095) + 0.11;  
   HomePresence["distance"] = distance;
   trc(distance);
-  pub(subjectHomePresence,HomePresence);
+  pub(strlwr(subjectHomePresence),HomePresence);
 }
 
 #endif

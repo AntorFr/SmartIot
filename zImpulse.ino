@@ -73,7 +73,7 @@ bool sendImpluse(){
     Impulsedata["duration"] = PulsesPeriods * IMPULSE_SAMPLE;
     Impulsedata["periodes"] = PulsesPeriods;
     
-    return pub(subjectImpulseoMQTT,Impulsedata);
+    return pub(strlwr(subjectImpulseoMQTT),Impulsedata);
   
   
  }

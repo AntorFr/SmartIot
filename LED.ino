@@ -48,7 +48,7 @@
         noir();
         timeLED = 0;
         trc(F("LED configured"));
-        pub(subjecLEDtoMQTT, LEDData);
+        pub(strlwr(subjecLEDtoMQTT), LEDData);
       }
   }
 

@@ -92,7 +92,7 @@ bool CompareToPrevious(sensor_temp_struc Sensor) {
     if(sensor_temp[i].addr == Sensor.addr) {
       trc(F("Sensor fund - compare to previous"));
       sensorfund = true;
-      if ((abs(sensor_temp[i].temp - Sensor.temp) >= 0.1) || (abs(sensor_temp[i].readtime - Sensor.readtime)> 5*60*1000)) {
+      if ((fabsf(sensor_temp[i].temp - Sensor.temp) >= 0.1) || (abs(sensor_temp[i].readtime - Sensor.readtime)> 5*60*1000)) {
          sensor_temp[i].temp = Sensor.temp;
          sensor_temp[i].readtime = Sensor.readtime;
          return true;
@@ -125,7 +125,7 @@ bool SendTempToMQTT(String addr, float temp){
     OWdata["adress"]=addr;
     OWdata["temp"]=temp;
 
-    return pub(subjectDS18XXtoMQTT,OWdata);
+    return pub(strlwr(subjectDS18XXtoMQTT),OWdata);
  }
 
 #endif
