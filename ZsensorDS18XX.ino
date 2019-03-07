@@ -125,7 +125,7 @@ bool SendTempToMQTT(String addr, float temp){
     OWdata["adress"]=addr;
     OWdata["temp"]=temp;
 
-    return pub(strlwr(subjectDS18XXtoMQTT),OWdata);
+    return pub(tolower(subjectDS18XXtoMQTT),OWdata);
  }
 
 #endif

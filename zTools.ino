@@ -148,6 +148,10 @@ bool pub(char * topic, char * payload, boolean retainFlag){
   return res;
 }
 
+bool pub(String topic, JsonObject& data){
+    return pub((char *)topic.c_str(),data);
+}
+
 bool pub(char * topicori, JsonObject& data){
     String topic = topicori;
     #ifdef valueAsASubject
@@ -333,4 +337,10 @@ void DeepSleep(int duration){
  #elif defined(ESP8266) 
   ESP.deepSleep(duration * uS_TO_S_FACTOR);
  #endif
+}
+
+String tolower(char* string){
+  String s = string;
+  s.toLowerCase();
+  return s;
 }

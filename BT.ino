@@ -37,8 +37,11 @@
           mac_adress.toUpperCase();
 
           BLEdata["bt_type"] = "BLE";
+
+          String mactopic = subjectBTtoMQTT;
+          mactopic.toLowerCase();
+          mactopic = mactopic + mac_adress;
           
-          String mactopic = strlwr(subjectBTtoMQTT) + mac_adress;
           if (advertisedDevice.haveName()){
               BLEdata["name"] = (char *)advertisedDevice.getName().c_str();
           }/*
@@ -261,7 +264,7 @@ boolean process_data(int offset, char * rest_data, char * mac_adress){
   char val[12];
 
   String mactopic(mac_adress);
-  mactopic = strlwr(subjectBTtoMQTT) + mactopic;
+  mactopic = tolower(subjectBTtoMQTT) + mactopic;
 
   // second value
   char val2[12];
@@ -330,7 +333,7 @@ void haRoomPresence(JsonObject& HomePresence){
   double distance = (0.89)* pow(ratio,7.7095) + 0.11;  
   HomePresence["distance"] = distance;
   trc(distance);
-  pub(strlwr(subjectHomePresence),HomePresence);
+  pub(tolower(subjectHomePresence),HomePresence);
 }
 
 #endif
