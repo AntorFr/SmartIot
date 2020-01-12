@@ -46,7 +46,7 @@ void pulseHandler() {
       Pulses = Pulses + 1;
     }
     LastMicros = micros();
-    //trc(F("Impulse detected"));
+    trc(F("Impulse detected"));
   }
 }
 

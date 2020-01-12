@@ -20,6 +20,9 @@
 #endif 
 #ifdef ZsensorDS18XX
   #include "config_DS18xx.h"
+#endif
+#ifdef Train
+  #include "config_train.h"
 #endif 
 
 
@@ -38,6 +41,8 @@ void callback(char*topic, byte* payload,unsigned int length);
 
 boolean connectedOnce = false; //indicate if we have been connected once to MQTT
 int failure_number = 0; // number of failure connecting to MQTT
+
+#define ARRAYSIZE(x)  (sizeof(x) / sizeof(x[0]))
 
 #ifdef ESP32
   #include <WiFi.h>
@@ -104,6 +109,7 @@ boolean reconnect() {
           #ifdef Watering
             //client.subscribe(subjectWateringtoMQTT); // subject on which other SmartIot will publish, this SmartIot will store these msg and by the way don't republish them if they have been already published
           #endif
+          trc(subjectMQTTtoX);
           trc(F("Subscription OK to the subjects"));
         }      
       } else {
@@ -112,11 +118,13 @@ boolean reconnect() {
         trc(failure_number);
         trc(F("failed, rc="));
         trc(client.state());
-        trc(F("try again in 5s"));
-        // Wait 5 seconds before retrying
-        delay(5000);
+        trc(F("wifi status, ws="));
+        trc(WiFi.status());
+        trc(F("try again in 3s"));
+        // Wait 3 seconds before retrying
+        delay(3000);
   
-        if (failure_number > maxMQTTretry){
+        if (failure_number >= maxMQTTretry){
           trc(F("failed connecting to mqtt"));
           setup_wifi();
         }
@@ -236,6 +244,15 @@ void setup() {
   #ifdef Impulse
     setupImpulse();
   #endif 
+  #ifdef Train
+    setupTrain();
+  #endif
+  #ifdef RailSwitch
+    setupRailSwitcht();
+  #endif
+  #ifdef NTP
+    setupNTP();
+  #endif  
 
     
   trc(F("MQTT_MAX_PACKET_SIZE"));
@@ -282,6 +299,15 @@ void loop() {
     #endif
     display_led();
   #endif
+
+  #ifdef NTP
+    loopNTP();
+  #endif
+
+  #ifdef TrainController
+    ReadSensor();
+  #endif 
+  
   
   //MQTT client connexion management
   if (!client.connected()) { // not connected
@@ -355,6 +381,18 @@ void heartbeat(bool pub_verbose) {
   trc("Activated modules");
   String modules = "";
 
+  /*https://github.com/evilgeniuslabs/eclipse-v2/blob/master/eclipse-v2.ino
+  Serial.print( F("Heap: ") ); Serial.println(system_get_free_heap_size());
+  Serial.print( F("Boot Vers: ") ); Serial.println(system_get_boot_version());
+  Serial.print( F("CPU: ") ); Serial.println(system_get_cpu_freq());
+  Serial.print( F("SDK: ") ); Serial.println(system_get_sdk_version());
+  Serial.print( F("Chip ID: ") ); Serial.println(system_get_chip_id());
+  Serial.print( F("Flash ID: ") ); Serial.println(spi_flash_get_id());
+  Serial.print( F("Flash Size: ") ); Serial.println(ESP.getFlashChipRealSize());
+  Serial.print( F("Vcc: ") ); Serial.println(ESP.getVcc());
+  Serial.println();
+  */
+
   #ifdef BT
    SYSdata["bt_id"] = getBTAddress();
   #endif
@@ -376,9 +414,15 @@ void heartbeat(bool pub_verbose) {
   #endif
   #ifdef Impulse
     modules = modules + Impulse;
-  #endif 
+  #endif
   #ifdef ZsensorDS18XX
     modules = modules + ZsensorDS18XX;
+  #endif 
+  #ifdef Train
+    modules = modules + Train;
+  #endif
+  #ifdef RailSwitch
+    modules = modules + RailSwitch;
   #endif 
   
   SYSdata["modules"] = modules;
@@ -445,6 +489,12 @@ void receivingMQTT(char * topicOri, char * datacallback) {
       #endif
       #ifdef LED
        MQTTtoLED(topicOri, jsondata);
+      #endif
+      #ifdef Train
+       MQTTtoTrain(topicOri, jsondata);
+      #endif
+      #ifdef RailSwitch
+       MQTTtoRailSwitch(topicOri, jsondata);
       #endif
      #endif 
   }

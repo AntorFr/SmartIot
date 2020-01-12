@@ -1,4 +1,4 @@
-#ifdef LED
+#if defined (LED) && !(defined (Fast_LED))
   // Fill the dots one after the other with a color
   void Wipe(uint32_t c, uint8_t wait) {
     static uint16_t y = 0;
