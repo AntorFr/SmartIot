@@ -9,8 +9,6 @@
   #define DATA_PIN D1
   CRGBArray<NUM_LEDS> leds;
 
-  #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
-
   #include "zFL_GradientPalettes.h";
   #include "zFL_Field.h"
 

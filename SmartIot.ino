@@ -23,6 +23,9 @@
 #endif
 #ifdef Train
   #include "config_train.h"
+#endif
+#ifdef TrainController
+  #include "config_TrainController.h"
 #endif 
 
 
@@ -250,6 +253,9 @@ void setup() {
   #ifdef RailSwitch
     setupRailSwitcht();
   #endif
+  #ifdef TrainController
+    setupTrainController();
+  #endif
   #ifdef NTP
     setupNTP();
   #endif  
@@ -305,7 +311,7 @@ void loop() {
   #endif
 
   #ifdef TrainController
-    ReadSensor();
+    loopTrainControler();
   #endif 
   
   
@@ -423,6 +429,9 @@ void heartbeat(bool pub_verbose) {
   #endif
   #ifdef RailSwitch
     modules = modules + RailSwitch;
+  #endif 
+  #ifdef TrainController
+    modules = modules + TrainController;
   #endif 
   
   SYSdata["modules"] = modules;
