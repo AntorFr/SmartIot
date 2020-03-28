@@ -2,8 +2,8 @@
 
 #include <ServoEasing.h>
 
-#define subjecRailSwitchtoMQTT "smallcity/railswitch/states"
-#define subjectMQTTtoRailSwitch "smallcity/railswitch/commands" 
+#define subjecRailSwitchtoMQTT "smallcity/states/railswitch"
+#define subjectMQTTtoRailSwitch "smallcity/commands/railswitch" 
 
 
 //Servo ESC; 

@@ -169,6 +169,8 @@ void setup() {
   timerAlarmWrite(timer, wdtTimeout * 1000, false); //set time in us
   timerAlarmEnable(timer);
   #endif
+
+  pinMode(led_error, OUTPUT);
   
   setup_wifi();
   trc(F("SmartIoT mac: "));
@@ -317,7 +319,6 @@ void loop() {
   
   //MQTT client connexion management
   if (!client.connected()) { // not connected
-
     //RED ON
     digitalWrite(led_error, LOW);
 

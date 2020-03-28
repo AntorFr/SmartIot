@@ -1,14 +1,16 @@
 #ifdef TrainController
 
+#include <Keypad.h>
 const uint8_t trainsCount = ARRAY_SIZE(trains);
 
 //core on which the readsensor task will run
 static int taskCore = 0;
 
+Keypad kpd = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 void setupTrainController(){
   #ifdef ESP32
-  analogReadResolution(12);
+  analogReadResolution(16);
   #endif
   
   for(int i=0;i<trainsCount;i++){
@@ -39,6 +41,7 @@ void coreTask( void * pvParameters ){
     while(true){
         //trc(taskMessage);
         ReadSensors();
+        ReadKeys();
     }
 }
 
@@ -48,6 +51,8 @@ void loopTrainControler(){
 #else
 void loopTrainControler(){
   ReadSensors();
+  ReadKeys();
+  delay(5);
 }
 #endif
 
@@ -55,12 +60,25 @@ void ReadSensors() {
   for(int i=0;i<trainsCount;i++){
     ReadSensor(&trains[i]);
   }
-  delay(5);
+}
+
+void ReadKeys() {
+  if (kpd.getKeys()) {
+    for (int i=0; i<LIST_MAX; i++)   // Scan the whole key list.
+    { if ( kpd.key[i].stateChanged && kpd.key[i].kstate == PRESSED)  
+      {
+         trc(F("Key pad pressed"));
+         SendSwitchtoMQTT(kpd.key[i].kcode);
+         
+      }
+    }
+  }
 }
 
 
 int ReadSensor(TrainConfig *train)
 {
+  unsigned long currentMillis = millis();
   int16_t sensorValue = analogRead(train->pin);
 
   if (sensorValue>= train->midle) {
@@ -72,9 +90,10 @@ int ReadSensor(TrainConfig *train)
     sensorValue = 0;
   }
 
-  if (abs(train->lastspeed-sensorValue)>=2) {
+  if ((currentMillis-train->last_send)> 500) {
     trc(analogRead(train->pin));
     train->lastspeed = sensorValue;
+    train->last_send = currentMillis;
     SendSpeedtoMQTT(train);
   }
 }
@@ -89,6 +108,21 @@ bool SendSpeedtoMQTT(TrainConfig *train){
     topic.toLowerCase();
     return pub(topic,jsondata);
 }
+
+bool SendSwitchtoMQTT(int switchid){
+    trc(F("Creating SwitchMQTT buffer"));
+    StaticJsonDocument<JSON_MSG_BUFFER> jsonBuffer;
+    JsonObject jsondata = jsonBuffer.to<JsonObject>();
+    JsonArray switchs = jsondata.createNestedArray("switchs");
+    JsonObject switch1 = switchs.createNestedObject();
+    switch1["servo"] = switchid;
+    switch1["pos"] = -1;
+    switch1["speed"] = 100;
+    String topic = subjectMQTTtoRailSwitch;
+    topic.toLowerCase();
+    return pub(topic,jsondata);
+}
+
 
 
 #endif

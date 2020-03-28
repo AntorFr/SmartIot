@@ -19,9 +19,12 @@ void MeasureTemp(){
     byte type_s;
     float temp;
 
+    int nb_devices =0;
+    
     ds.reset_search();
 
     while(ds.search(addr)) {
+      nb_devices++;
       if (OneWire::crc8(addr, 7) != addr[7]) {
        trc(F("OneWire - CRC is not valid!"));
        continue;
@@ -81,6 +84,9 @@ void MeasureTemp(){
       if (CompareToPrevious(last_read)) { 
         SendTempToMQTT(str_adress,temp);
       }
+    }
+    if (nb_devices==0) {
+      trc(F("= No device founded"));
     }
   }
 }
