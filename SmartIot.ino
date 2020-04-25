@@ -65,8 +65,6 @@ int failure_number = 0; // number of failure connecting to MQTT
 #endif
 
 WiFiClient eClient;
-
-// client link to pubsub mqtt
 PubSubClient client(eClient);
 
 //MQTT last attemps reconnection date
@@ -511,17 +509,4 @@ void receivingMQTT(char * topicOri, char * datacallback) {
   MQTTtoSYS(topicOri);
   //YELLOW OFF
   digitalWrite(led_send, HIGH);
-}
-
-
-void MQTTtoSYS(char * topicOri){
-  String topic = topicOri;
-  if (topic == MQTTtosubjectSYS){
-    // we acknowledge the sending by publishing the value to an acknowledgement topic
-    //trc(F("Request for heartbeat"));
-    heartbeat(true);
-  } else if (topic == MQTTtosubjectReboot || topic == MQTTtosubjectRebootAll) {
-    //trc(F("Request for reboot"));
-    resetModule();
-  }
 }

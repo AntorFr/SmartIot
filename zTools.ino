@@ -50,6 +50,18 @@ void trc(float msg){
   #endif
 }
 
+void MQTTtoSYS(char * topicOri){
+  String topic = topicOri;
+  if (topic == MQTTtosubjectSYS){
+    // we acknowledge the sending by publishing the value to an acknowledgement topic
+    //trc(F("Request for heartbeat"));
+    heartbeat(true);
+  } else if (topic == MQTTtosubjectReboot || topic == MQTTtosubjectRebootAll) {
+    //trc(F("Request for reboot"));
+    resetModule();
+  }
+}
+
 
 
 void storeValue(unsigned long MQTTvalue){
