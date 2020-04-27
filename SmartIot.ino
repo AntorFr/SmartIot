@@ -31,6 +31,7 @@
 
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include <FS.h>   //Include SPIFFS
 
 /*------------------------------------------------------------------------*/
 
@@ -78,19 +79,11 @@ unsigned long timer_led_error = 0;
 //Time used to wait for an interval before checking system measures
 unsigned long timer_sys_measures = 0;
 
+DynamicJsonDocument docConfig(512);
+
 #ifdef ESP32 // Add watchdog on wifi reconnect
   const int wdtTimeout = 60000;  //time in ms to trigger the watchdog
   hw_timer_t *timer = NULL;
-  
-  void IRAM_ATTR resetModule() {
-    ets_printf("reboot\n");
-    esp_restart();
-  }
-#elif defined(ESP8266)
-  void resetModule() {
-    ets_printf("reboot\n");
-    ESP.restart();
-  }
 #endif
 
 boolean reconnect() {
@@ -155,6 +148,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void setup() {
   //Launch serial for debugging purposes
   Serial.begin(SERIAL_BAUD);
+  SPIFFS.begin();
+
+  load_config();
 
   #ifdef ESP8266
   //Serial.end();
@@ -228,6 +224,8 @@ void setup() {
     delay(1500);
   }
   lastReconnectAttempt = 0;
+
+  
 
   #ifdef BT
     setupBT();
@@ -363,9 +361,7 @@ void loop() {
 void heartbeat(bool pub_verbose) {
   StaticJsonDocument<JSON_MSG_BUFFER> jsonBuffer;
   JsonObject SYSdata = jsonBuffer.to<JsonObject>();
-  
-  if(pub_verbose) SYSdata["version"] = SIot_VERSION;
-  
+    
   trc("Uptime (s)");    
   unsigned long uptime = millis()/1000;
   trc(uptime);
@@ -383,8 +379,13 @@ void heartbeat(bool pub_verbose) {
   String SSID = WiFi.SSID();
   SYSdata["SSID"] = SSID;
   trc(SSID);
-  trc("Activated modules");
-  String modules = "";
+
+  if(pub_verbose) {
+    SYSdata["version"] = SIot_VERSION;
+    SYSdata["ChipId"] = ESP.getChipId();
+    SYSdata["SketchMD5"] = ESP.getSketchMD5();
+
+  } 
 
   /*https://github.com/evilgeniuslabs/eclipse-v2/blob/master/eclipse-v2.ino
   Serial.print( F("Heap: ") ); Serial.println(system_get_free_heap_size());
@@ -398,6 +399,8 @@ void heartbeat(bool pub_verbose) {
   Serial.println();
   */
 
+  trc("Activated modules");
+  String modules = "";
   #ifdef BT
    SYSdata["bt_id"] = getBTAddress();
   #endif
