@@ -1,0 +1,97 @@
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+SmartIot	KEYWORD1
+SmartIotNode	KEYWORD1
+SmartIotSetting	KEYWORD1
+SmartIotEvent	KEYWORD1
+SmartIotEventType	KEYWORD1
+SmartIotRange	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+SmartIot_setBrand	KEYWORD2
+SmartIot_setFirmware	KEYWORD2
+
+# SmartIot
+
+setup	KEYWORD2
+loop	KEYWORD2
+disableLogging	KEYWORD2
+setLoggingPrinter	KEYWORD2
+disableLedFeedback	KEYWORD2
+setLedPin	KEYWORD2
+setConfigurationApPassword	KEYWORD2
+setGlobalInputHandler	KEYWORD2
+setBroadcastHandler	KEYWORD2
+onEvent	KEYWORD2
+setResetTrigger	KEYWORD2
+disableResetTrigger	KEYWORD2
+setSetupFunction	KEYWORD2
+setLoopFunction	KEYWORD2
+setStandalone	KEYWORD2
+reset	KEYWORD2
+setIdle	KEYWORD2
+isConfigured	KEYWORD2
+isConnected	KEYWORD2
+getConfiguration	KEYWORD2
+getMqttClient	KEYWORD2
+getLogger	KEYWORD2
+prepareToSleep	KEYWORD2
+doDeepSleep	KEYWORD2
+
+# SmartIotNode
+
+getId	KEYWORD2
+getType	KEYWORD2
+advertise	KEYWORD2
+advertiseRange	KEYWORD2
+settable	KEYWORD2
+setProperty	KEYWORD2
+
+# SmartIotSetting
+
+get	KEYWORD2
+wasProvided	KEYWORD2
+setDefaultValue	KEYWORD2
+setValidator	KEYWORD2
+
+# SmartIotRange
+
+isRange	KEYWORD2
+index	KEYWORD2
+
+# SendingPromise
+
+setQos	KEYWORD2
+setRetained	KEYWORD2
+setRange	KEYWORD2
+send	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+# SmartIotEventType
+
+STANDALONE_MODE	LITERAL1
+CONFIGURATION_MODE	LITERAL1
+NORMAL_MODE	LITERAL1
+OTA_STARTED	LITERAL1
+OTA_PROGRESS	LITERAL1
+OTA_FAILED	LITERAL1
+OTA_SUCCESSFUL	LITERAL1
+ABOUT_TO_RESET	LITERAL1
+WIFI_CONNECTED	LITERAL1
+WIFI_DISCONNECTED	LITERAL1
+MQTT_READY	LITERAL1
+MQTT_DISCONNECTED	LITERAL1
+MQTT_PACKET_ACKNOWLEDGED	LITERAL1
+READY_TO_SLEEP	LITERAL1
+
+# StreamingOperator
+
+endl	LITERAL1
