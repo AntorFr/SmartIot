@@ -28,7 +28,7 @@ SmartIotClass::SmartIotClass()
   Interface::get().reset.resetFlag = false;
   Interface::get().disable = false;
   Interface::get().flaggedForSleep = false;
-  Interface::get().globalInputHandler = [](const SmartIotNode& node, const SmartIotRange& range, const String& property, const String& value) { return false; };
+  Interface::get().globalInputHandler = [](const SmartIotNode& node, const String& value) { return false; };
   Interface::get().broadcastHandler = [](const String& level, const String& value) { return false; };
   Interface::get().setupFunction = []() {};
   Interface::get().loopFunction = []() {};

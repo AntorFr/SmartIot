@@ -53,46 +53,10 @@ class BootNormal : public Boot {
     bool done = false;
     enum class GlobalStep {
       PUB_INIT,
-      PUB_SMARTIOT,
-      PUB_NAME,
-      PUB_MAC,
-      PUB_LOCALIP,
-      PUB_NODES_ATTR,
-      PUB_STATS,
-      PUB_STATS_INTERVAL,
-      PUB_FW_NAME,
-      PUB_FW_VERSION,
-      PUB_FW_CHECKSUM,
-      PUB_IMPLEMENTATION,
-      PUB_IMPLEMENTATION_CONFIG,
-      PUB_IMPLEMENTATION_VERSION,
-      PUB_IMPLEMENTATION_OTA_ENABLED,
-      PUB_NODES,
-      SUB_IMPLEMENTATION_OTA,
-      SUB_IMPLEMENTATION_RESET,
-      SUB_IMPLEMENTATION_CONFIG_SET,
-      SUB_SET,
-      SUB_BROADCAST,
+      SUB_SMARTIOT,
+      SUB_NODES,
       PUB_READY
     } globalStep;
-
-    enum class NodeStep {
-      PUB_NAME,
-      PUB_TYPE,
-      PUB_ARRAY,
-      PUB_ARRAY_NODES,
-      PUB_PROPERTIES,
-      PUB_PROPERTIES_ATTRIBUTES
-    } nodeStep;
-
-    enum class PropertyStep {
-      PUB_NAME,
-      PUB_SETTABLE,
-      PUB_RETAINED,
-      PUB_DATATYPE,
-      PUB_UNIT,
-      PUB_FORMAT
-    } propertyStep;
 
     size_t currentNodeIndex;
     size_t currentArrayNodeIndex;
@@ -140,13 +104,16 @@ class BootNormal : public Boot {
   #endif // ESP32
   void _mqttConnect();
   void _advertise();
+  bool _subscribe();
   void _onMqttConnected();
   void _onMqttDisconnected(AsyncMqttClientDisconnectReason reason);
   void _onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total);
   void _onMqttPublish(uint16_t id);
   void _prefixMqttTopic();
-  char* _prefixMqttTopic(PGM_P topic);
-  char* _deviceMqttTopic(PGM_P topic);
+  char* _firmwareMqttTopic(PGM_P topic);
+  char* _prefixMqttTopic(PGM_P topic,bool set = false);
+  char* _deviceMqttTopic(PGM_P topic,bool set = false);
+  char* _nodeMqttTopic(size_t nodeIndex,bool set= false);
   void _publish_stats();
   bool _publishOtaStatus(int status, const char* info = nullptr);
   void _endOtaUpdate(bool success, uint8_t update_error = UPDATE_ERROR_OK);
@@ -159,5 +126,6 @@ class BootNormal : public Boot {
   bool __handleResets(char* topic, char* payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total);
   bool __handleConfig(char* topic, char* payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total);
   bool __handleNodeProperty(char* topic, char* payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total);
+  bool __handleNode(char* topic, char* payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total);
 };
 }  // namespace SmartIotInternals

@@ -15,7 +15,7 @@ public:
 protected:
   virtual void setup() override;
   virtual void onReadyToOperate() override;
-  virtual bool handleInput(const SmartIotRange& range, const String& property, const String& value);
+  virtual bool handleInput(const String& value);
 
   virtual void loop() override;
 

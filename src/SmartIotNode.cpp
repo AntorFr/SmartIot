@@ -68,6 +68,26 @@ SmartIotNode::~SmartIotNode() {
     return;  // never reached, here for clarity
 }
 
+uint16_t SmartIotNode::send(const String& value) {
+  if (!Interface::get().ready) {
+    Interface::get().getLogger() << F("✖ setNodeProperty(): impossible now") << endl;
+    return 0;
+  }
+
+  char* topic = new char[strlen(Interface::get().getConfig().get().mqtt.baseTopic) + strlen(_name) + 1 + strlen(_type) + 1]; 
+  
+  strcpy(topic, Interface::get().getConfig().get().mqtt.baseTopic);
+  strcat(topic, _type);
+  strcat_P(topic, PSTR("/"));
+  strcat(topic, _name);
+
+  uint16_t packetId = Interface::get().getMqttClient().publish(topic, 1, true, value.c_str());
+
+  delete[] topic;
+
+  return packetId;
+}
+
 PropertyInterface& SmartIotNode::advertise(const char* id) {
   Property* propertyObject = new Property(id);
 
@@ -93,8 +113,8 @@ Property* SmartIotNode::getProperty(const String& property) const {
   return NULL;
 }
 
-bool SmartIotNode::handleInput(const SmartIotRange& range, const String& property, const String& value) {
-  return _inputHandler(range, property, value);
+bool SmartIotNode::handleInput(const String& value) {
+  return _inputHandler(value);
 }
 
 const std::vector<SmartIotInternals::Property*>& SmartIotNode::getProperties() const {

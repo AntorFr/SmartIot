@@ -78,7 +78,7 @@ class SmartIotNode {
   friend SmartIotInternals::BootConfig;
 
  public:
-  SmartIotNode(const char* id, const char* name, const char* type, bool range = false, uint16_t lower = 0, uint16_t upper = 0, const SmartIotInternals::NodeInputHandler& nodeInputHandler = [](const SmartIotRange& range, const String& property, const String& value) { return false; });
+  SmartIotNode(const char* id, const char* name, const char* type, bool range = false, uint16_t lower = 0, uint16_t upper = 0, const SmartIotInternals::NodeInputHandler& nodeInputHandler = [](const String& value) { return false; });
   virtual ~SmartIotNode();
 
   const char* getId() const { return _id; }
@@ -87,6 +87,9 @@ class SmartIotNode {
   bool isRange() const { return _range; }
   uint16_t getLower() const { return _lower; }
   uint16_t getUpper() const { return _upper; }
+
+  
+  uint16_t send(const String& value);
 
   SmartIotInternals::PropertyInterface& advertise(const char* id);
   SmartIotInternals::SendingPromise& setProperty(const String& property) const;
@@ -100,7 +103,7 @@ class SmartIotNode {
   virtual void setup() {}
   virtual void loop() {}
   virtual void onReadyToOperate() {}
-  virtual bool handleInput(const SmartIotRange& range, const String& property, const String& value);
+  virtual bool handleInput(const String& value);
 
  private:
   const std::vector<SmartIotInternals::Property*>& getProperties() const;

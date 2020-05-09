@@ -20,10 +20,10 @@ void PingNode::printCaption() {
  * Handles the received MQTT messages from SmartIot.
  *
  */
-bool PingNode::handleInput(const SmartIotRange& range, const String& property, const String& value) {
+bool PingNode::handleInput(const String& value) {
 
   printCaption();
-  SmartIot.getLogger() << cIndent << "〽 handleInput -> property '" << property << "' value=" << value << endl;
+  SmartIot.getLogger() << cIndent << "〽 handleInput value=" << value << endl;
 
   setProperty(cPing).send(cPong);
 

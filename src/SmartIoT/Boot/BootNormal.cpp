@@ -212,42 +212,62 @@ void BootNormal::_publish_stats(){
 
     serializeJson(statsData,(char*) _jsonMessageBuffer.get(),JSON_MSG_BUFFER);
 
-    uint16_t statsPacketId = Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("heartbeat")), 1, true, _jsonMessageBuffer.get());
+    uint16_t statsPacketId = Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("log/heartbeat")), 1, true, _jsonMessageBuffer.get());
     Interface::get().getLogger() << F("  Stats published at: ") << _mqttTopic.get() << endl;
     if (statsPacketId != 0) _statsTimer.tick();
     Interface::get().event.type = SmartIotEventType::SENDING_STATISTICS;
     Interface::get().eventHandler(Interface::get().event);
 }
 
-char* BootNormal::_deviceMqttTopic(PGM_P topic) {
+char* BootNormal::_deviceMqttTopic(PGM_P topic,bool set) {
   strcpy(_mqttTopic.get(), Interface::get().getConfig().get().mqtt.baseTopic);
   strcat_P(_mqttTopic.get(), topic);
   strcat_P(_mqttTopic.get(), PSTR("/"));
-  strcat(_mqttTopic.get(), Interface::get().getConfig().get().name);
+  strcat(_mqttTopic.get(), Interface::get().getConfig().get().deviceId);
+  if (set) strcat_P(_mqttTopic.get(), PSTR("/set"));
+  return _mqttTopic.get();
+}
+
+char* BootNormal::_nodeMqttTopic(size_t nodeIndex,bool set) {
+  SmartIotNode* node = SmartIotNode::nodes[nodeIndex];
+  _prefixMqttTopic();
+  strcat(_mqttTopic.get(), node->getType());
+  strcat_P(_mqttTopic.get(), PSTR("/"));
+  strcat(_mqttTopic.get(), node->getName());
+  if (set) strcat_P(_mqttTopic.get(), PSTR("/set"));
+  return _mqttTopic.get();
+}
+
+char* BootNormal::_firmwareMqttTopic(PGM_P topic) {
+  _prefixMqttTopic();
+  strcat_P(_mqttTopic.get(), topic);
+  strcat_P(_mqttTopic.get(), PSTR("/"));
+  strcat(_mqttTopic.get(), Interface::get().firmware.name);
+  strcat_P(_mqttTopic.get(), PSTR("/+"));
   return _mqttTopic.get();
 }
 
 void BootNormal::_prefixMqttTopic() {
   strcpy(_mqttTopic.get(), Interface::get().getConfig().get().mqtt.baseTopic);
-  strcat(_mqttTopic.get(), Interface::get().getConfig().get().deviceId);
 }
 
-char* BootNormal::_prefixMqttTopic(PGM_P topic) {
+char* BootNormal::_prefixMqttTopic(PGM_P topic,bool set) {
   _prefixMqttTopic();
   strcat_P(_mqttTopic.get(), topic);
-
+  if (set) strcat_P(_mqttTopic.get(), PSTR("/set"));
   return _mqttTopic.get();
 }
 
 bool BootNormal::_publishOtaStatus(int status, const char* info) {
-  String payload(status);
+  DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(3));
+  JsonObject data = jsonBuffer.to<JsonObject>();
+  data["status"]  = status;
   if (info) {
-    payload.concat(F(" "));
-    payload.concat(info);
+    data["info"]  = info;
   }
 
   return Interface::get().getMqttClient().publish(
-            _prefixMqttTopic(PSTR("/$implementation/ota/status")), 0, true, payload.c_str()) != 0;
+            _deviceMqttTopic(PSTR("log/status")), 0, true, _jsonMessageBuffer.get()) != 0;
 }
 
 void BootNormal::_endOtaUpdate(bool success, uint8_t update_error) {
@@ -427,334 +447,154 @@ void BootNormal::_mqttConnect() {
 }
 
 void BootNormal::_advertise() {
-  Interface::get().getLogger() << F("〽 Start  advertise...") << endl;
-  auto numSettings = ISmartIotSetting::settings.size();
-  auto numNodes = SmartIotNode::nodes.size();
-  DynamicJsonDocument jsonBuffer (
-    JSON_OBJECT_SIZE(4) + //data
-    JSON_OBJECT_SIZE(4) + //stats
-    JSON_OBJECT_SIZE(3) + //fw
-    JSON_OBJECT_SIZE(3) + //implementation
-    JSON_ARRAY_SIZE(numNodes) + // Array "nodes"
-    (JSON_OBJECT_SIZE(3) ) * numNodes + // Objects in "nodes"
-    JSON_ARRAY_SIZE(numSettings) + // Array "settings"
-    numSettings * JSON_OBJECT_SIZE(3)); // Objects in "settings";
-  JsonObject data = jsonBuffer.to<JsonObject>();
-  data[F("version")]=SMARTIOT_VERSION;
-  data[F("name")]= Interface::get().getConfig().get().name;
-  //data[F("mac")]= WiFi.macAddress().c_str();
-
-  IPAddress localIp = WiFi.localIP();
-  char localIpStr[MAX_IP_STRING_LENGTH];
-  Helpers::ipToString(localIp, localIpStr);
-  data[F("ip")]= localIpStr;
-  JsonObject stats = data.createNestedObject("stats");
-  stats[F("stats_interval")] = Interface::get().getConfig().get().deviceStatsInterval+5;  
-  uint8_t quality = Helpers::rssiToPercentage(WiFi.RSSI());
-  stats[F("wifi_quality")] = quality;
-  _uptime.update();
-  stats[F("uptime")] = _uptime.getSeconds();
-  uint32_t freeMem= ESP.getFreeHeap();
-  stats[F("freeMem")] = freeMem;
-  uint16_t packetId;
-
-  JsonObject fw = data.createNestedObject("fw");
-  fw[F("name")]= Interface::get().firmware.name;
-  fw[F("version")]= Interface::get().firmware.version;
-  fw[F("checksum")]= _fwChecksum;
-
-  JsonObject implementation = data.createNestedObject("implementation");
-  #ifdef ESP32
-    implementation[F("device")]= "esp32";
-  #elif defined(ESP8266)
-    implementation[F("device")]= "esp8266";  
-  #endif // ESP32
-  //implementation[F("config")]= Interface::get().getConfig().getSafeConfigFile();
-  implementation[F("version")]=SMARTIOT_ESP8266_VERSION;
-  implementation[F("ota")]=Interface::get().getConfig().get().ota.enabled;
-
-  if (SmartIotNode::nodes.size()) {
-    JsonArray nodesData = data.createNestedArray("nodes");
-    for(int i = 0; i < SmartIotNode::nodes.size() - 1;i++) {
-      JsonObject nodeData = nodesData.createNestedObject();
-      SmartIotNode* node = SmartIotNode::nodes[i];
-      nodeData["id"]=node->getId();
-      nodeData["name"]=node->getName();
-      nodeData["type"]=node->getType();
-
-      if (node->getProperties().size()) {
-        JsonArray nodesPropertiesData = nodeData.createNestedArray("nodes");
-        for (Property* iProperty : node->getProperties()) {
-            JsonObject nodesPropertieData = nodesPropertiesData.createNestedObject();
-            nodesPropertieData[F("id")]= iProperty->getId();
-            if (iProperty->getName() && (iProperty->getName()[0] != '\0')) {
-              nodesPropertieData[F("name")]= iProperty->getName();
-            }
-        }
-      }
-    }
-
-    serializeJson(data,(char*) _jsonMessageBuffer.get(),JSON_MSG_BUFFER);
-
-    uint16_t packetId = Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("heartbeat")), 1, true, _jsonMessageBuffer.get());
-    if (packetId != 0) _advertisementProgress.done = true;
-    Interface::get().getLogger() << F("✔ advertise sent.") << endl;
-  }
-  
-/*
   switch (_advertisementProgress.globalStep) {
-    case AdvertisementProgress::GlobalStep::PUB_IMPLEMENTATION_OTA_ENABLED:
-      packetId = Interface::get().getMqttClient().publish(_prefixMqttTopic(PSTR("/$implementation/ota/enabled")), 1, true, Interface::get().getConfig().get().ota.enabled ? "true" : "false");
-      if (packetId != 0) {
-        if (SmartIotNode::nodes.size()) {  // skip if no nodes to publish
-          _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::PUB_NODES;
-          _advertisementProgress.nodeStep = AdvertisementProgress::NodeStep::PUB_NAME;
-          _advertisementProgress.currentNodeIndex = 0;
-        } else {
-          _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::SUB_IMPLEMENTATION_OTA;
-        }
-      }
-      break;
-    case AdvertisementProgress::GlobalStep::PUB_NODES:
+    case AdvertisementProgress::GlobalStep::PUB_INIT:
     {
-      SmartIotNode* node = SmartIotNode::nodes[_advertisementProgress.currentNodeIndex];
-      std::unique_ptr<char[]> subtopic = std::unique_ptr<char[]>(new char[1 + strlen(node->getId()) + 12 + 1]);  // /id/$properties
-      switch (_advertisementProgress.nodeStep) {
-        case AdvertisementProgress::NodeStep::PUB_NAME:
-          strcpy_P(subtopic.get(), PSTR("/"));
-          strcat(subtopic.get(), node->getId());
-          strcat_P(subtopic.get(), PSTR("/$name"));
-          packetId = Interface::get().getMqttClient().publish(_prefixMqttTopic(subtopic.get()), 1, true, node->getName());
-          if (packetId != 0) _advertisementProgress.nodeStep = AdvertisementProgress::NodeStep::PUB_TYPE;
-          break;
-        case AdvertisementProgress::NodeStep::PUB_TYPE:
-          strcpy_P(subtopic.get(), PSTR("/"));
-          strcat(subtopic.get(), node->getId());
-          strcat_P(subtopic.get(), PSTR("/$type"));
-          packetId = Interface::get().getMqttClient().publish(_prefixMqttTopic(subtopic.get()), 1, true, node->getType());
-          if (packetId != 0) _advertisementProgress.nodeStep = AdvertisementProgress::NodeStep::PUB_ARRAY;
-          break;
-        case AdvertisementProgress::NodeStep::PUB_ARRAY:
-        {
-          if (!node->isRange()) {
-            _advertisementProgress.nodeStep = AdvertisementProgress::NodeStep::PUB_PROPERTIES;
-            break;
-          }
-          strcpy_P(subtopic.get(), PSTR("/"));
-          strcat(subtopic.get(), node->getId());
-          strcat_P(subtopic.get(), PSTR("/$array"));
-          String arrayInfo;
-          arrayInfo.concat(node->getLower());
-          arrayInfo.concat("-");
-          arrayInfo.concat(node->getUpper());
+      Interface::get().getLogger() << F("〽 Start  advertise...") << endl;
+      auto numSettings = ISmartIotSetting::settings.size();
+      auto numNodes = SmartIotNode::nodes.size();
+      DynamicJsonDocument jsonBuffer (
+        JSON_OBJECT_SIZE(6) + //data
+        JSON_OBJECT_SIZE(6) + //stats
+        JSON_OBJECT_SIZE(6) + //fw
+        JSON_OBJECT_SIZE(6) + //implementation
+        JSON_ARRAY_SIZE(numNodes) + // Array "nodes"
+        (JSON_OBJECT_SIZE(3) ) * numNodes + // Objects in "nodes"
+        JSON_ARRAY_SIZE(numSettings) + // Array "settings"
+        numSettings * JSON_OBJECT_SIZE(3)); // Objects in "settings";
+      JsonObject data = jsonBuffer.to<JsonObject>();
+      data[F("version")]=SMARTIOT_VERSION;
+      data[F("name")]= Interface::get().getConfig().get().name;
+      //data[F("mac")]= WiFi.macAddress().c_str();
 
-          packetId = Interface::get().getMqttClient().publish(_prefixMqttTopic(subtopic.get()), 1, true, arrayInfo.c_str());
-          if (packetId != 0) {
-            _advertisementProgress.nodeStep = AdvertisementProgress::NodeStep::PUB_ARRAY_NODES;
-            _advertisementProgress.currentArrayNodeIndex = node->getLower();
-          }
-          break;
-        }
-        case AdvertisementProgress::NodeStep::PUB_ARRAY_NODES:
-        {
-          String id;
-          id.concat(node->getId());
-          id.concat("_");
-          id.concat(_advertisementProgress.currentArrayNodeIndex);
-          strcpy_P(subtopic.get(), PSTR("/"));
-          strcat(subtopic.get(), id.c_str());
-          strcat_P(subtopic.get(), PSTR("/$name"));
-          packetId = Interface::get().getMqttClient().publish(_prefixMqttTopic(subtopic.get()), 1, true, id.c_str());
-          if (packetId != 0) {
-            if (_advertisementProgress.currentArrayNodeIndex < node->getUpper()) {
-              _advertisementProgress.currentArrayNodeIndex++;
-            } else {
-              _advertisementProgress.currentArrayNodeIndex = node->getLower();
-              _advertisementProgress.nodeStep = AdvertisementProgress::NodeStep::PUB_PROPERTIES;
-            }
-          }
-          break;
-        }
-        case AdvertisementProgress::NodeStep::PUB_PROPERTIES:
-        {
-          strcpy_P(subtopic.get(), PSTR("/"));
-          strcat(subtopic.get(), node->getId());
-          strcat_P(subtopic.get(), PSTR("/$properties"));
-          String properties;
-          for (Property* iProperty : node->getProperties()) {
-            properties.concat(iProperty->getId());
-            properties.concat(",");
-          }
-          if (node->getProperties().size() >= 1) properties.remove(properties.length() - 1);
-          packetId = Interface::get().getMqttClient().publish(_prefixMqttTopic(subtopic.get()), 1, true, properties.c_str());
-          if (packetId != 0) {
-            if (node->getProperties().size()) {
-              // There are properties of the node to be advertised
-              _advertisementProgress.nodeStep = AdvertisementProgress::NodeStep::PUB_PROPERTIES_ATTRIBUTES;
-              _advertisementProgress.propertyStep = AdvertisementProgress::PropertyStep::PUB_NAME;
-              _advertisementProgress.currentPropertyIndex = 0;
-            } else {
-              // No properties of the node to be advertised
-              if (_advertisementProgress.currentNodeIndex < SmartIotNode::nodes.size() - 1) {
-                // There are nodes to be advertised
-                _advertisementProgress.currentNodeIndex++;
-                _advertisementProgress.nodeStep = AdvertisementProgress::NodeStep::PUB_NAME;
-                _advertisementProgress.currentPropertyIndex = 0;
-                _advertisementProgress.propertyStep = AdvertisementProgress::PropertyStep::PUB_NAME;
-              } else {
-                // All nodes have been advertised
-                _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::SUB_IMPLEMENTATION_OTA;
-              }
-            }
-          }
-          break;
-        }
-        case AdvertisementProgress::NodeStep::PUB_PROPERTIES_ATTRIBUTES:
-        {
-          SmartIotNode* node = SmartIotNode::nodes[_advertisementProgress.currentNodeIndex];
-          Property* iProperty = node->getProperties()[_advertisementProgress.currentPropertyIndex];
-          std::unique_ptr<char[]> subtopic = std::unique_ptr<char[]>(new char[1 + strlen(node->getId()) + 1 +strlen(iProperty->getId()) + 10 + 1]);  // /nodeId/propId/$settable
-          switch (_advertisementProgress.propertyStep) {
-            case AdvertisementProgress::PropertyStep::PUB_NAME:
-              if (iProperty->getName() && (iProperty->getName()[0] != '\0')) {
-                strcpy_P(subtopic.get(), PSTR("/"));
-                strcat(subtopic.get(), node->getId());
-                strcat_P(subtopic.get(), PSTR("/"));
-                strcat(subtopic.get(), iProperty->getId());
-                strcat_P(subtopic.get(), PSTR("/$name"));
-                packetId = Interface::get().getMqttClient().publish(_prefixMqttTopic(subtopic.get()), 1, true, iProperty->getName());
-                if (packetId != 0) _advertisementProgress.propertyStep = AdvertisementProgress::PropertyStep::PUB_SETTABLE;
-              } else {
-                _advertisementProgress.propertyStep = AdvertisementProgress::PropertyStep::PUB_SETTABLE;
-              }
-              break;
-            case AdvertisementProgress::PropertyStep::PUB_SETTABLE:
-              if (iProperty->isSettable()) {
-                strcpy_P(subtopic.get(), PSTR("/"));
-                strcat(subtopic.get(), node->getId());
-                strcat_P(subtopic.get(), PSTR("/"));
-                strcat(subtopic.get(), iProperty->getId());
-                strcat_P(subtopic.get(), PSTR("/$settable"));
-                packetId = Interface::get().getMqttClient().publish(_prefixMqttTopic(subtopic.get()), 1, true, "true");
-                if (packetId != 0) _advertisementProgress.propertyStep = AdvertisementProgress::PropertyStep::PUB_RETAINED;
-              } else {
-                _advertisementProgress.propertyStep = AdvertisementProgress::PropertyStep::PUB_RETAINED;
-              }
-              break;
-            case AdvertisementProgress::PropertyStep::PUB_RETAINED:
-              if (!iProperty->isRetained()) {
-                strcpy_P(subtopic.get(), PSTR("/"));
-                strcat(subtopic.get(), node->getId());
-                strcat_P(subtopic.get(), PSTR("/"));
-                strcat(subtopic.get(), iProperty->getId());
-                strcat_P(subtopic.get(), PSTR("/$retained"));
-                packetId = Interface::get().getMqttClient().publish(_prefixMqttTopic(subtopic.get()), 1, true, "false");
-                if (packetId != 0) _advertisementProgress.propertyStep = AdvertisementProgress::PropertyStep::PUB_DATATYPE;
-              } else {
-                _advertisementProgress.propertyStep = AdvertisementProgress::PropertyStep::PUB_DATATYPE;
-              }
-              break;
-            case AdvertisementProgress::PropertyStep::PUB_DATATYPE:
-              if (iProperty->getDatatype() && (iProperty->getDatatype()[0] != '\0')) {
-                strcpy_P(subtopic.get(), PSTR("/"));
-                strcat(subtopic.get(), node->getId());
-                strcat_P(subtopic.get(), PSTR("/"));
-                strcat(subtopic.get(), iProperty->getId());
-                strcat_P(subtopic.get(), PSTR("/$datatype"));
-                packetId = Interface::get().getMqttClient().publish(_prefixMqttTopic(subtopic.get()), 1, true, iProperty->getDatatype());
-                if (packetId != 0) _advertisementProgress.propertyStep = AdvertisementProgress::PropertyStep::PUB_UNIT;
-              } else {
-                _advertisementProgress.propertyStep = AdvertisementProgress::PropertyStep::PUB_UNIT;
-              }
-              break;
-            case AdvertisementProgress::PropertyStep::PUB_UNIT:
-              if (iProperty->getUnit() && (iProperty->getUnit()[0] != '\0')) {
-                strcpy_P(subtopic.get(), PSTR("/"));
-                strcat(subtopic.get(), node->getId());
-                strcat_P(subtopic.get(), PSTR("/"));
-                strcat(subtopic.get(), iProperty->getId());
-                strcat_P(subtopic.get(), PSTR("/$unit"));
-                packetId = Interface::get().getMqttClient().publish(_prefixMqttTopic(subtopic.get()), 1, true, iProperty->getUnit());
-                if (packetId != 0) _advertisementProgress.propertyStep = AdvertisementProgress::PropertyStep::PUB_FORMAT;
-              } else {
-                _advertisementProgress.propertyStep = AdvertisementProgress::PropertyStep::PUB_FORMAT;
-              }
-              break;
-            case AdvertisementProgress::PropertyStep::PUB_FORMAT:
-            {
-              bool sent = false;
-              if (iProperty->getFormat() && (iProperty->getFormat()[0] != '\0')) {
-                strcpy_P(subtopic.get(), PSTR("/"));
-                strcat(subtopic.get(), node->getId());
-                strcat_P(subtopic.get(), PSTR("/"));
-                strcat(subtopic.get(), iProperty->getId());
-                strcat_P(subtopic.get(), PSTR("/$format"));
-                packetId = Interface::get().getMqttClient().publish(_prefixMqttTopic(subtopic.get()), 1, true, iProperty->getFormat());
-                if (packetId != 0) sent = true;
-              } else {
-                sent = true;
-              }
+      IPAddress localIp = WiFi.localIP();
+      char localIpStr[MAX_IP_STRING_LENGTH];
+      Helpers::ipToString(localIp, localIpStr);
+      data[F("ip")]= localIpStr;
+      JsonObject stats = data.createNestedObject("stats");
+      stats[F("stats_interval")] = Interface::get().getConfig().get().deviceStatsInterval+5;  
+      uint8_t quality = Helpers::rssiToPercentage(WiFi.RSSI());
+      stats[F("wifi_quality")] = quality;
+      _uptime.update();
+      stats[F("uptime")] = _uptime.getSeconds();
+      uint32_t freeMem= ESP.getFreeHeap();
+      stats[F("freeMem")] = freeMem;
+      uint16_t packetId;
 
-              if (sent) {
-                if (_advertisementProgress.currentPropertyIndex < node->getProperties().size() - 1) {
-                  // Not all properties of the node have been advertised
-                  _advertisementProgress.currentPropertyIndex++;
-                  _advertisementProgress.propertyStep = AdvertisementProgress::PropertyStep::PUB_NAME;
-                } else {
-                  // All properties of the node have been advertised
-                  if (_advertisementProgress.currentNodeIndex < SmartIotNode::nodes.size() - 1) {
-                    // Not all nodes have been advertised
-                    _advertisementProgress.currentNodeIndex++;
-                    _advertisementProgress.nodeStep = AdvertisementProgress::NodeStep::PUB_NAME;
-                    _advertisementProgress.currentPropertyIndex = 0;
-                    _advertisementProgress.propertyStep = AdvertisementProgress::PropertyStep::PUB_NAME;
-                  } else {
-                    // All nodes have been advertised -> next global step
-                    _advertisementProgress.currentNodeIndex = 0;
-                    _advertisementProgress.nodeStep = AdvertisementProgress::NodeStep::PUB_NAME;
-                    _advertisementProgress.currentPropertyIndex = 0;
-                    _advertisementProgress.propertyStep = AdvertisementProgress::PropertyStep::PUB_NAME;
-                    _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::SUB_IMPLEMENTATION_OTA;
-                  }
+      JsonObject fw = data.createNestedObject("fw");
+      fw[F("name")]= Interface::get().firmware.name;
+      fw[F("version")]= Interface::get().firmware.version;
+      fw[F("checksum")]= _fwChecksum;
+
+      JsonObject implementation = data.createNestedObject("implementation");
+      #ifdef ESP32
+        implementation[F("device")]= "esp32";
+      #elif defined(ESP8266)
+        implementation[F("device")]= "esp8266";  
+      #endif // ESP32
+      //implementation[F("config")]= Interface::get().getConfig().getSafeConfigFile();
+      implementation[F("version")]=SMARTIOT_ESP8266_VERSION;
+      implementation[F("ota")]=Interface::get().getConfig().get().ota.enabled;
+
+      if (SmartIotNode::nodes.size()) {
+        JsonArray nodesData = data.createNestedArray("nodes");
+        for(int i = 0; i < SmartIotNode::nodes.size() - 1;i++) {
+          JsonObject nodeData = nodesData.createNestedObject();
+          SmartIotNode* node = SmartIotNode::nodes[i];
+          nodeData["id"]=node->getId();
+          nodeData["name"]=node->getName();
+          nodeData["type"]=node->getType();
+
+          if (node->getProperties().size()) {
+            JsonArray nodesPropertiesData = nodeData.createNestedArray("nodes");
+            for (Property* iProperty : node->getProperties()) {
+                JsonObject nodesPropertieData = nodesPropertiesData.createNestedObject();
+                nodesPropertieData[F("id")]= iProperty->getId();
+                if (iProperty->getName() && (iProperty->getName()[0] != '\0')) {
+                  nodesPropertieData[F("name")]= iProperty->getName();
                 }
-              }
-              break;
             }
           }
         }
       }
+
+      serializeJson(data,(char*) _jsonMessageBuffer.get(),JSON_MSG_BUFFER);
+
+      packetId = Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("log/advertise")), 1, true, _jsonMessageBuffer.get());
+      if (packetId != 0) _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::SUB_SMARTIOT;
       break;
     }
-    case AdvertisementProgress::GlobalStep::SUB_IMPLEMENTATION_OTA:
-      packetId = Interface::get().getMqttClient().subscribe(_prefixMqttTopic(PSTR("/$implementation/ota/firmware/+")), 1);
-      if (packetId != 0) _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::SUB_IMPLEMENTATION_RESET;
-      break;
-    case AdvertisementProgress::GlobalStep::SUB_IMPLEMENTATION_RESET:
-      packetId = Interface::get().getMqttClient().subscribe(_prefixMqttTopic(PSTR("/$implementation/reset")), 1);
-      if (packetId != 0) _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::SUB_IMPLEMENTATION_CONFIG_SET;
-      break;
-    case AdvertisementProgress::GlobalStep::SUB_IMPLEMENTATION_CONFIG_SET:
-      packetId = Interface::get().getMqttClient().subscribe(_prefixMqttTopic(PSTR("/$implementation/config/set")), 1);
-      if (packetId != 0) _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::SUB_SET;
-      break;
-    case AdvertisementProgress::GlobalStep::SUB_SET:
-      packetId = Interface::get().getMqttClient().subscribe(_prefixMqttTopic(PSTR("/+/+/set")), 2);
-      if (packetId != 0) _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::SUB_BROADCAST;
-      break;
-    case AdvertisementProgress::GlobalStep::SUB_BROADCAST:
+    case AdvertisementProgress::GlobalStep::SUB_SMARTIOT:
+    case AdvertisementProgress::GlobalStep::SUB_NODES:
     {
-      String broadcast_topic(Interface::get().getConfig().get().mqtt.baseTopic);
-      broadcast_topic.concat("$broadcast/+");
-      packetId = Interface::get().getMqttClient().subscribe(broadcast_topic.c_str(), 2);
-      if (packetId != 0) _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::PUB_READY;
+      _subscribe();
       break;
     }
     case AdvertisementProgress::GlobalStep::PUB_READY:
-      packetId = Interface::get().getMqttClient().publish(_prefixMqttTopic(PSTR("/$state")), 1, true, "ready");
-      if (packetId != 0) _advertisementProgress.done = true;
+    {
+      _advertisementProgress.done = true;
+      Interface::get().getLogger() << F("✔ advertise sent.") << endl;
       break;
+    }
   }
-  */
+}
+
+bool BootNormal::_subscribe(){
+  uint16_t packetId;
+  String baseTopic_topic(Interface::get().getConfig().get().mqtt.baseTopic);
+  String device_id_topic(Interface::get().getConfig().get().deviceId);
+  switch (_advertisementProgress.globalStep) {
+    case AdvertisementProgress::GlobalStep::SUB_SMARTIOT:
+    {
+    Interface::get().getLogger() << F("〽 Start subscribing to SmartIoT MQTT topics: ") << endl;
+
+    //heartbeat broadcast command 
+    packetId = Interface::get().getMqttClient().subscribe(_prefixMqttTopic(PSTR("log/+"),true), 1);
+    Interface::get().getLogger() << F(" ✔ ") << _mqttTopic.get() << endl;
+    if (packetId == 0) return false;
+
+    //heartbeat device command
+    packetId = Interface::get().getMqttClient().subscribe(_deviceMqttTopic(PSTR("log/+"),true), 1);
+    Interface::get().getLogger() << F(" ✔ ") << _mqttTopic.get() << endl;
+    if (packetId == 0) return false;
+
+    //reset broadcast command
+    packetId = Interface::get().getMqttClient().subscribe(_prefixMqttTopic(PSTR("setup/reset"),true), 1);
+    Interface::get().getLogger() << F(" ✔ ") << _mqttTopic.get() << endl;
+    if (packetId == 0) return false;
+  
+    //reset device command
+    packetId = Interface::get().getMqttClient().subscribe(_deviceMqttTopic(PSTR("setup/reset"),true), 1);
+    Interface::get().getLogger() << F(" ✔ ") << _mqttTopic.get() << endl;
+    if (packetId == 0) return false;
+
+    //reset OTA command
+    packetId = Interface::get().getMqttClient().subscribe(_firmwareMqttTopic(PSTR("setup/ota")), 1);
+    Interface::get().getLogger() << F(" ✔ ") << _mqttTopic.get() << endl;
+    if (packetId == 0) return false;
+  
+
+
+    _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::SUB_NODES;
+    return true;
+    break;
+    }
+    case AdvertisementProgress::GlobalStep::SUB_NODES:
+    {
+      if (SmartIotNode::nodes.size()) {
+        Interface::get().getLogger() << F("〽 Start subscribing to SmartIoT MQTT node topics: ") << endl;
+        for(int i = 0; i < SmartIotNode::nodes.size() - 1;i++) {
+          packetId = Interface::get().getMqttClient().subscribe(_nodeMqttTopic(i,true), 1);
+          Interface::get().getLogger() << F(" ✔ ") << _mqttTopic.get() << endl;
+          if (packetId == 0) return false;
+        }
+      } 
+      _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::PUB_READY;
+      return true;
+      break;
+    }
+  }
+  return false;
 }
 
 void BootNormal::_onMqttConnected() {
@@ -774,8 +614,6 @@ void BootNormal::_onMqttDisconnected(AsyncMqttClientDisconnectReason reason) {
   _mqttConnectNotified = false;
   _advertisementProgress.done = false;
   _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::PUB_INIT;
-  _advertisementProgress.nodeStep = AdvertisementProgress::NodeStep::PUB_NAME;
-  _advertisementProgress.propertyStep = AdvertisementProgress::PropertyStep::PUB_NAME;
   _advertisementProgress.currentNodeIndex = 0;
   _advertisementProgress.currentPropertyIndex = 0;
   if (!_mqttDisconnectNotified) {
@@ -826,25 +664,30 @@ void BootNormal::_onMqttMessage(char* topic, char* payload, AsyncMqttClientMessa
 
   /* Arrived here, the payload is complete */
 
-  // 3. handle broadcasts
-  if (__handleBroadcasts(_mqttTopicCopy.get(), payload, properties, len, index, total))
-    return;
-
-  // 4.all following messages are only for this deviceId
-  if (strcmp(_mqttTopicLevels.get()[0], Interface::get().getConfig().get().deviceId) != 0)
-    return;
+  // 3. handle broadcasts TODO> not used anymore
+  //if (__handleBroadcasts(_mqttTopicCopy.get(), payload, properties, len, index, total))
+  //  return;
 
   // 5. handle reset
   if (__handleResets(_mqttTopicCopy.get(), payload, properties, len, index, total))
     return;
 
+
+  // 4.all following messages are only for this deviceId
+  //if (strcmp(_mqttTopicLevels.get()[0], Interface::get().getConfig().get().deviceId) != 0)
+  //  return;
+
   // 6. handle config set
   if (__handleConfig(_mqttTopicCopy.get(), payload, properties, len, index, total))
     return;
 
-  // 7. here, we're sure we have a node property
-  if (__handleNodeProperty(_mqttTopicCopy.get(), payload, properties, len, index, total))
+  // 7. handle node channel
+  if (__handleNode(_mqttTopicCopy.get(), payload, properties, len, index, total))
     return;
+
+  // 7. here, we're sure we have a node property
+  //if (__handleNodeProperty(_mqttTopicCopy.get(), payload, properties, len, index, total))
+  //  return;
 }
 
 void BootNormal::_onMqttPublish(uint16_t id) {
@@ -900,10 +743,10 @@ bool SmartIotInternals::BootNormal::__fillPayloadBuffer(char * topic, char * pay
 
 bool SmartIotInternals::BootNormal::__handleOTAUpdates(char* topic, char* payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total) {
   if (
-    _mqttTopicLevelsCount == 5
-    && strcmp(_mqttTopicLevels.get()[0], Interface::get().getConfig().get().deviceId) == 0
-    && strcmp_P(_mqttTopicLevels.get()[1], PSTR("$implementation")) == 0
-    && strcmp_P(_mqttTopicLevels.get()[2], PSTR("ota")) == 0
+    _mqttTopicLevelsCount ==  5
+    && strcmp_P(_mqttTopicLevels.get()[0], PSTR("setup")) == 0
+    && strcmp_P(_mqttTopicLevels.get()[1], PSTR("ota")) == 0
+    && strcmp(_mqttTopicLevels.get()[2], Interface::get().firmware.name) == 0
     && strcmp_P(_mqttTopicLevels.get()[3], PSTR("firmware")) == 0
     ) {
     if (index == 0) {
@@ -1099,12 +942,11 @@ bool SmartIotInternals::BootNormal::__handleBroadcasts(char * topic, char * payl
 
 bool SmartIotInternals::BootNormal::__handleResets(char * topic, char * payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total) {
   if (
-    _mqttTopicLevelsCount == 3
-    && strcmp_P(_mqttTopicLevels.get()[1], PSTR("$implementation")) == 0
+    _mqttTopicLevelsCount >= 3
+    && strcmp_P(_mqttTopicLevels.get()[1], PSTR("setup")) == 0
     && strcmp_P(_mqttTopicLevels.get()[2], PSTR("reset")) == 0
-    && strcmp_P(_mqttPayloadBuffer.get(), PSTR("true")) == 0
     ) {
-    Interface::get().getMqttClient().publish(_prefixMqttTopic(PSTR("/$implementation/reset")), 1, true, "false");
+    Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("/log/status")), 1, false, PSTR("{\"log\":\"Flagged for reset by network\"}"));
     Interface::get().getLogger() << F("Flagged for reset by network") << endl;
     Interface::get().disable = true;
     Interface::get().reset.resetFlag = true;
@@ -1198,13 +1040,13 @@ bool SmartIotInternals::BootNormal::__handleNodeProperty(char * topic, char * pa
   #ifdef DEBUG
     Interface::get().getLogger() << F("Calling global input handler...") << endl;
   #endif // DEBUG
-  bool handled = Interface::get().globalInputHandler(*SmartIoTNode, range, String(property), String(_mqttPayloadBuffer.get()));
+  bool handled = Interface::get().globalInputHandler(*SmartIoTNode, String(_mqttPayloadBuffer.get()));
   if (handled) return true;
 
   #ifdef DEBUG
     Interface::get().getLogger() << F("Calling node input handler...") << endl;
   #endif // DEBUG
-  handled = SmartIoTNode->handleInput(range, String(property), String(_mqttPayloadBuffer.get()));
+  handled = SmartIoTNode->handleInput(String(_mqttPayloadBuffer.get()));
   if (handled) return true;
 
   #ifdef DEBUG
@@ -1222,6 +1064,42 @@ bool SmartIotInternals::BootNormal::__handleNodeProperty(char * topic, char * pa
       Interface::get().getLogger() << F("no") << endl;
     }
     Interface::get().getLogger() << F("  • Property: ") << property << endl;
+    Interface::get().getLogger() << F("  • Value: ") << _mqttPayloadBuffer.get() << endl;
+  }
+
+  return false;
+}
+
+bool SmartIotInternals::BootNormal::__handleNode(char * topic, char * payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total) {
+  char* node = _mqttTopicLevels.get()[1];
+
+  #ifdef DEBUG
+    Interface::get().getLogger() << F("Recived network message for ") << SmartIoTNode->getId() << endl;
+  #endif // DEBUG
+
+  SmartIotNode* SmartIoTNode = nullptr;
+  SmartIoTNode = SmartIotNode::find(node);
+
+  if (!SmartIoTNode) {
+    Interface::get().getLogger() << F("Node ") << node << F(" not registered") << endl;
+    return true;
+  }
+
+  #ifdef DEBUG
+    Interface::get().getLogger() << F("Calling global input handler...") << endl;
+  #endif // DEBUG
+  bool handled = Interface::get().globalInputHandler(*SmartIoTNode, String(_mqttPayloadBuffer.get()));
+  if (handled) return true;
+
+  #ifdef DEBUG
+    Interface::get().getLogger() << F("Calling node input handler...") << endl;
+  #endif // DEBUG
+  handled = SmartIoTNode->handleInput(String(_mqttPayloadBuffer.get()));
+  if (handled) return true;
+
+  if (!handled) {
+    Interface::get().getLogger() << F("No handlers handled the following packet:") << endl;
+    Interface::get().getLogger() << F("  • Node ID: ") << node << endl;
     Interface::get().getLogger() << F("  • Value: ") << _mqttPayloadBuffer.get() << endl;
   }
 

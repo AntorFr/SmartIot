@@ -10,13 +10,13 @@ Setting lightnode2/property1/ will trigger the property input handler.
 #include <Arduino.h>
 #include <SmartIot.h>
 
-bool globalInputHandler(const SmartIotNode& node, const SmartIotRange& range, const String& property, const String& value) {
-  SmartIot.getLogger() << "Global input handler. Received on node " << node.getId() << ": " << property << " = " << value << endl;
+bool globalInputHandler(const SmartIotNode& node, const String& value) {
+  SmartIot.getLogger() << "Global input handler. Received on node " << node.getId() <<  " value = " << value << endl;
   return false;
 }
 
-bool nodeInputHandler(const SmartIotRange & range, const String & property, const String & value) {
-  SmartIot.getLogger() << "Node input handler. Received on property " << property << " value: " << value;
+bool nodeInputHandler(const String & value) {
+  SmartIot.getLogger() << "Node input handler. Received value: " << value;
   return true;
 }
 
