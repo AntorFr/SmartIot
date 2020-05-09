@@ -44,13 +44,10 @@ PropertyInterface& PropertyInterface::setProperty(Property* property) {
   return *this;
 }
 
-SmartIotNode::SmartIotNode(const char* id, const char* name, const char* type, bool range, uint16_t lower, uint16_t upper, const NodeInputHandler& inputHandler)
+SmartIotNode::SmartIotNode(const char* id, const char* name, const char* type, const NodeInputHandler& inputHandler)
 : _id(id)
 , _name(name)
 , _type(type)
-, _range(range)
-, _lower(lower)
-, _upper(upper)
 , runLoopDisconnected(false)
 , _properties()
 , _inputHandler(inputHandler) {

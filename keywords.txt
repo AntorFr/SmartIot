@@ -47,8 +47,8 @@ doDeepSleep	KEYWORD2
 
 getId	KEYWORD2
 getType	KEYWORD2
+setHandler KEYWORD2
 advertise	KEYWORD2
-advertiseRange	KEYWORD2
 settable	KEYWORD2
 setProperty	KEYWORD2
 

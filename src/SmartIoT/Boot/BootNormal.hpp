@@ -113,7 +113,7 @@ class BootNormal : public Boot {
   char* _firmwareMqttTopic(PGM_P topic);
   char* _prefixMqttTopic(PGM_P topic,bool set = false);
   char* _deviceMqttTopic(PGM_P topic,bool set = false);
-  char* _nodeMqttTopic(size_t nodeIndex,bool set= false);
+  char* _nodeMqttTopic(SmartIotNode* nodeIndex,bool set= false);
   void _publish_stats();
   bool _publishOtaStatus(int status, const char* info = nullptr);
   void _endOtaUpdate(bool success, uint8_t update_error = UPDATE_ERROR_OK);

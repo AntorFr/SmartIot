@@ -118,7 +118,7 @@ void BootNormal::loop() {
 
   if (_flaggedForReboot && Interface::get().reset.idle) {
     Interface::get().getLogger() << F("Device is idle") << endl;
-
+    Interface::get().disable = true;
     Interface::get().getLogger() << F("↻ Rebooting...") << endl;
     Serial.flush();
     ESP.restart();
@@ -228,12 +228,11 @@ char* BootNormal::_deviceMqttTopic(PGM_P topic,bool set) {
   return _mqttTopic.get();
 }
 
-char* BootNormal::_nodeMqttTopic(size_t nodeIndex,bool set) {
-  SmartIotNode* node = SmartIotNode::nodes[nodeIndex];
+char* BootNormal::_nodeMqttTopic(SmartIotNode* node,bool set) {
   _prefixMqttTopic();
   strcat(_mqttTopic.get(), node->getType());
   strcat_P(_mqttTopic.get(), PSTR("/"));
-  strcat(_mqttTopic.get(), node->getName());
+  strcat(_mqttTopic.get(), node->getId());
   if (set) strcat_P(_mqttTopic.get(), PSTR("/set"));
   return _mqttTopic.get();
 }
@@ -498,9 +497,8 @@ void BootNormal::_advertise() {
 
       if (SmartIotNode::nodes.size()) {
         JsonArray nodesData = data.createNestedArray("nodes");
-        for(int i = 0; i < SmartIotNode::nodes.size() - 1;i++) {
+        for (SmartIotNode* node : SmartIotNode::nodes) {
           JsonObject nodeData = nodesData.createNestedObject();
-          SmartIotNode* node = SmartIotNode::nodes[i];
           nodeData["id"]=node->getId();
           nodeData["name"]=node->getName();
           nodeData["type"]=node->getType();
@@ -546,31 +544,31 @@ bool BootNormal::_subscribe(){
   switch (_advertisementProgress.globalStep) {
     case AdvertisementProgress::GlobalStep::SUB_SMARTIOT:
     {
-    Interface::get().getLogger() << F("〽 Start subscribing to SmartIoT MQTT topics: ") << endl;
+    Interface::get().getLogger() << F(" 〽 Start subscribing to SmartIoT MQTT topics: ") << endl;
 
     //heartbeat broadcast command 
     packetId = Interface::get().getMqttClient().subscribe(_prefixMqttTopic(PSTR("log/+"),true), 1);
-    Interface::get().getLogger() << F(" ✔ ") << _mqttTopic.get() << endl;
+    Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
     if (packetId == 0) return false;
 
     //heartbeat device command
     packetId = Interface::get().getMqttClient().subscribe(_deviceMqttTopic(PSTR("log/+"),true), 1);
-    Interface::get().getLogger() << F(" ✔ ") << _mqttTopic.get() << endl;
+    Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
     if (packetId == 0) return false;
 
     //reset broadcast command
     packetId = Interface::get().getMqttClient().subscribe(_prefixMqttTopic(PSTR("setup/reset"),true), 1);
-    Interface::get().getLogger() << F(" ✔ ") << _mqttTopic.get() << endl;
+    Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
     if (packetId == 0) return false;
   
     //reset device command
     packetId = Interface::get().getMqttClient().subscribe(_deviceMqttTopic(PSTR("setup/reset"),true), 1);
-    Interface::get().getLogger() << F(" ✔ ") << _mqttTopic.get() << endl;
+    Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
     if (packetId == 0) return false;
 
     //reset OTA command
     packetId = Interface::get().getMqttClient().subscribe(_firmwareMqttTopic(PSTR("setup/ota")), 1);
-    Interface::get().getLogger() << F(" ✔ ") << _mqttTopic.get() << endl;
+    Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
     if (packetId == 0) return false;
   
 
@@ -581,11 +579,11 @@ bool BootNormal::_subscribe(){
     }
     case AdvertisementProgress::GlobalStep::SUB_NODES:
     {
-      if (SmartIotNode::nodes.size()) {
-        Interface::get().getLogger() << F("〽 Start subscribing to SmartIoT MQTT node topics: ") << endl;
-        for(int i = 0; i < SmartIotNode::nodes.size() - 1;i++) {
-          packetId = Interface::get().getMqttClient().subscribe(_nodeMqttTopic(i,true), 1);
-          Interface::get().getLogger() << F(" ✔ ") << _mqttTopic.get() << endl;
+      if (SmartIotNode::nodes.size()>0) {
+        Interface::get().getLogger() << F(" 〽 Start subscribing to SmartIoT MQTT node topics: ") << endl;
+        for (SmartIotNode* node : SmartIotNode::nodes) {
+          packetId = Interface::get().getMqttClient().subscribe(_nodeMqttTopic(node,true), 1);
+          Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
           if (packetId == 0) return false;
         }
       } 
@@ -941,15 +939,21 @@ bool SmartIotInternals::BootNormal::__handleBroadcasts(char * topic, char * payl
 }
 
 bool SmartIotInternals::BootNormal::__handleResets(char * topic, char * payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total) {
+  /*
+  Interface::get().getLogger() << F("📢 test if reset") << endl;
+  Interface::get().getLogger() << F(" topic") << topic << endl;
+  Interface::get().getLogger() << F(" mqttTopicLevelsCount") << _mqttTopicLevelsCount << endl;
+  Interface::get().getLogger() << F(" topic level 1: ") << _mqttTopicLevels.get()[0] << endl;
+  Interface::get().getLogger() << F(" topic level 2: ") << _mqttTopicLevels.get()[1] << endl;
+  */
   if (
     _mqttTopicLevelsCount >= 3
-    && strcmp_P(_mqttTopicLevels.get()[1], PSTR("setup")) == 0
-    && strcmp_P(_mqttTopicLevels.get()[2], PSTR("reset")) == 0
+    && strcmp_P(_mqttTopicLevels.get()[0], PSTR("setup")) == 0
+    && strcmp_P(_mqttTopicLevels.get()[1], PSTR("reset")) == 0
     ) {
-    Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("/log/status")), 1, false, PSTR("{\"log\":\"Flagged for reset by network\"}"));
-    Interface::get().getLogger() << F("Flagged for reset by network") << endl;
-    Interface::get().disable = true;
-    Interface::get().reset.resetFlag = true;
+    Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("/log/status")), 1, false, "{\"log\":\"Flagged for reboot\"}" );
+    _flaggedForReboot = true;
+    Interface::get().getLogger() << F("Flagged for reboot") << endl;
     return true;
   }
   return false;
@@ -1015,13 +1019,6 @@ bool SmartIotInternals::BootNormal::__handleNodeProperty(char * topic, char * pa
   if (!SmartIoTNode) {
     Interface::get().getLogger() << F("Node ") << node << F(" not registered") << endl;
     return true;
-  }
-
-  if (SmartIoTNode->isRange()) {
-    if (range.index < SmartIoTNode->getLower() || range.index > SmartIoTNode->getUpper()) {
-      Interface::get().getLogger() << F("Range index ") << range.index << F(" is not within the bounds of ") << SmartIoTNode->getId() << endl;
-      return true;
-    }
   }
 
   Property* propertyObject = nullptr;

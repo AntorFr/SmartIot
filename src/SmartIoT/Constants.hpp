@@ -7,7 +7,7 @@
 #endif // ESP32
 
 #ifndef SMARTIOT_CONFIG
-#define SMARTIOT_CONFIG 0
+#define SMARTIOT_CONFIG 0 // config = 0 web server config desable
 #endif
 
 namespace SmartIotInternals {
