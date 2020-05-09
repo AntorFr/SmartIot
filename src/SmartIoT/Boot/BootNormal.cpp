@@ -445,81 +445,87 @@ void BootNormal::_mqttConnect() {
   }
 }
 
+bool BootNormal::_publish_config() {
+  auto numSettings = ISmartIotSetting::settings.size();
+  auto numNodes = SmartIotNode::nodes.size();
+  DynamicJsonDocument jsonBuffer (
+    JSON_OBJECT_SIZE(6) + //data
+    JSON_OBJECT_SIZE(6) + //stats
+    JSON_OBJECT_SIZE(6) + //fw
+    JSON_OBJECT_SIZE(6) + //implementation
+    JSON_ARRAY_SIZE(numNodes) + // Array "nodes"
+    (JSON_OBJECT_SIZE(3) ) * numNodes + // Objects in "nodes"
+    JSON_ARRAY_SIZE(numSettings) + // Array "settings"
+    numSettings * JSON_OBJECT_SIZE(3)); // Objects in "settings";
+  JsonObject data = jsonBuffer.to<JsonObject>();
+  data[F("version")]=SMARTIOT_VERSION;
+  data[F("name")]= Interface::get().getConfig().get().name;
+  //data[F("mac")]= WiFi.macAddress().c_str();
+
+  IPAddress localIp = WiFi.localIP();
+  char localIpStr[MAX_IP_STRING_LENGTH];
+  Helpers::ipToString(localIp, localIpStr);
+  data[F("ip")]= localIpStr;
+  JsonObject stats = data.createNestedObject("stats");
+  stats[F("stats_interval")] = Interface::get().getConfig().get().deviceStatsInterval+5;  
+  uint8_t quality = Helpers::rssiToPercentage(WiFi.RSSI());
+  stats[F("wifi_quality")] = quality;
+  _uptime.update();
+  stats[F("uptime")] = _uptime.getSeconds();
+  uint32_t freeMem= ESP.getFreeHeap();
+  stats[F("freeMem")] = freeMem;
+  uint16_t packetId;
+
+  JsonObject fw = data.createNestedObject("fw");
+  fw[F("name")]= Interface::get().firmware.name;
+  fw[F("version")]= Interface::get().firmware.version;
+  fw[F("checksum")]= _fwChecksum;
+
+  JsonObject implementation = data.createNestedObject("implementation");
+  #ifdef ESP32
+    implementation[F("device")]= "esp32";
+  #elif defined(ESP8266)
+    implementation[F("device")]= "esp8266";  
+  #endif // ESP32
+  //implementation[F("config")]= Interface::get().getConfig().getSafeConfigFile();
+  implementation[F("version")]=SMARTIOT_ESP8266_VERSION;
+  implementation[F("ota")]=Interface::get().getConfig().get().ota.enabled;
+
+  if (SmartIotNode::nodes.size()) {
+    JsonArray nodesData = data.createNestedArray("nodes");
+    for (SmartIotNode* node : SmartIotNode::nodes) {
+      JsonObject nodeData = nodesData.createNestedObject();
+      nodeData["id"]=node->getId();
+      nodeData["name"]=node->getName();
+      nodeData["type"]=node->getType();
+
+      if (node->getProperties().size()) {
+        JsonArray nodesPropertiesData = nodeData.createNestedArray("nodes");
+        for (Property* iProperty : node->getProperties()) {
+            JsonObject nodesPropertieData = nodesPropertiesData.createNestedObject();
+            nodesPropertieData[F("id")]= iProperty->getId();
+            if (iProperty->getName() && (iProperty->getName()[0] != '\0')) {
+              nodesPropertieData[F("name")]= iProperty->getName();
+            }
+        }
+      }
+    }
+  }
+
+  serializeJson(data,(char*) _jsonMessageBuffer.get(),JSON_MSG_BUFFER);
+  Interface::get().getLogger() << F(" 〽 sending  config...") << endl;
+  packetId = Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("log/advertise")), 1, true, _jsonMessageBuffer.get());
+  return (packetId != 0); 
+}
+
 void BootNormal::_advertise() {
   switch (_advertisementProgress.globalStep) {
     case AdvertisementProgress::GlobalStep::PUB_INIT:
     {
       Interface::get().getLogger() << F("〽 Start  advertise...") << endl;
-      auto numSettings = ISmartIotSetting::settings.size();
-      auto numNodes = SmartIotNode::nodes.size();
-      DynamicJsonDocument jsonBuffer (
-        JSON_OBJECT_SIZE(6) + //data
-        JSON_OBJECT_SIZE(6) + //stats
-        JSON_OBJECT_SIZE(6) + //fw
-        JSON_OBJECT_SIZE(6) + //implementation
-        JSON_ARRAY_SIZE(numNodes) + // Array "nodes"
-        (JSON_OBJECT_SIZE(3) ) * numNodes + // Objects in "nodes"
-        JSON_ARRAY_SIZE(numSettings) + // Array "settings"
-        numSettings * JSON_OBJECT_SIZE(3)); // Objects in "settings";
-      JsonObject data = jsonBuffer.to<JsonObject>();
-      data[F("version")]=SMARTIOT_VERSION;
-      data[F("name")]= Interface::get().getConfig().get().name;
-      //data[F("mac")]= WiFi.macAddress().c_str();
-
-      IPAddress localIp = WiFi.localIP();
-      char localIpStr[MAX_IP_STRING_LENGTH];
-      Helpers::ipToString(localIp, localIpStr);
-      data[F("ip")]= localIpStr;
-      JsonObject stats = data.createNestedObject("stats");
-      stats[F("stats_interval")] = Interface::get().getConfig().get().deviceStatsInterval+5;  
-      uint8_t quality = Helpers::rssiToPercentage(WiFi.RSSI());
-      stats[F("wifi_quality")] = quality;
-      _uptime.update();
-      stats[F("uptime")] = _uptime.getSeconds();
-      uint32_t freeMem= ESP.getFreeHeap();
-      stats[F("freeMem")] = freeMem;
-      uint16_t packetId;
-
-      JsonObject fw = data.createNestedObject("fw");
-      fw[F("name")]= Interface::get().firmware.name;
-      fw[F("version")]= Interface::get().firmware.version;
-      fw[F("checksum")]= _fwChecksum;
-
-      JsonObject implementation = data.createNestedObject("implementation");
-      #ifdef ESP32
-        implementation[F("device")]= "esp32";
-      #elif defined(ESP8266)
-        implementation[F("device")]= "esp8266";  
-      #endif // ESP32
-      //implementation[F("config")]= Interface::get().getConfig().getSafeConfigFile();
-      implementation[F("version")]=SMARTIOT_ESP8266_VERSION;
-      implementation[F("ota")]=Interface::get().getConfig().get().ota.enabled;
-
-      if (SmartIotNode::nodes.size()) {
-        JsonArray nodesData = data.createNestedArray("nodes");
-        for (SmartIotNode* node : SmartIotNode::nodes) {
-          JsonObject nodeData = nodesData.createNestedObject();
-          nodeData["id"]=node->getId();
-          nodeData["name"]=node->getName();
-          nodeData["type"]=node->getType();
-
-          if (node->getProperties().size()) {
-            JsonArray nodesPropertiesData = nodeData.createNestedArray("nodes");
-            for (Property* iProperty : node->getProperties()) {
-                JsonObject nodesPropertieData = nodesPropertiesData.createNestedObject();
-                nodesPropertieData[F("id")]= iProperty->getId();
-                if (iProperty->getName() && (iProperty->getName()[0] != '\0')) {
-                  nodesPropertieData[F("name")]= iProperty->getName();
-                }
-            }
-          }
-        }
-      }
-
-      serializeJson(data,(char*) _jsonMessageBuffer.get(),JSON_MSG_BUFFER);
-
-      packetId = Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("log/advertise")), 1, true, _jsonMessageBuffer.get());
-      if (packetId != 0) _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::SUB_SMARTIOT;
+      if (_publish_config()) {
+        _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::SUB_SMARTIOT;
+      } 
       break;
     }
     case AdvertisementProgress::GlobalStep::SUB_SMARTIOT:
@@ -556,13 +562,13 @@ bool BootNormal::_subscribe(){
     Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
     if (packetId == 0) return false;
 
-    //reset broadcast command
-    packetId = Interface::get().getMqttClient().subscribe(_prefixMqttTopic(PSTR("setup/reset"),true), 1);
+    //setup broadcast command
+    packetId = Interface::get().getMqttClient().subscribe(_prefixMqttTopic(PSTR("setup/+"),true), 1);
     Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
     if (packetId == 0) return false;
   
-    //reset device command
-    packetId = Interface::get().getMqttClient().subscribe(_deviceMqttTopic(PSTR("setup/reset"),true), 1);
+    //setup device command
+    packetId = Interface::get().getMqttClient().subscribe(_deviceMqttTopic(PSTR("setup/+"),true), 1);
     Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
     if (packetId == 0) return false;
 
@@ -668,6 +674,14 @@ void BootNormal::_onMqttMessage(char* topic, char* payload, AsyncMqttClientMessa
 
   // 5. handle reset
   if (__handleResets(_mqttTopicCopy.get(), payload, properties, len, index, total))
+    return;
+
+  // 5. handle reset
+  if (__handleHeartbeat(_mqttTopicCopy.get(), payload, properties, len, index, total))
+    return;
+
+  // 5. handle advertise
+  if (__handleAdvertise(_mqttTopicCopy.get(), payload, properties, len, index, total))
     return;
 
 
@@ -938,6 +952,8 @@ bool SmartIotInternals::BootNormal::__handleBroadcasts(char * topic, char * payl
   return false;
 }
 
+
+
 bool SmartIotInternals::BootNormal::__handleResets(char * topic, char * payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total) {
   /*
   Interface::get().getLogger() << F("📢 test if reset") << endl;
@@ -959,14 +975,54 @@ bool SmartIotInternals::BootNormal::__handleResets(char * topic, char * payload,
   return false;
 }
 
+
+bool SmartIotInternals::BootNormal::__handleHeartbeat(char * topic, char * payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total) {
+  if (
+    _mqttTopicLevelsCount >= 3
+    && strcmp_P(_mqttTopicLevels.get()[0], PSTR("log")) == 0
+    && strcmp_P(_mqttTopicLevels.get()[1], PSTR("heartbeat")) == 0
+    && (
+      strcmp_P(_mqttTopicLevels.get()[2], PSTR("set")) == 0
+      || (strcmp(_mqttTopicLevels.get()[2], Interface::get().getConfig().get().deviceId) == 0
+          && strcmp_P(_mqttTopicLevels.get()[3], PSTR("set")) == 0)
+      )
+    ) {
+    _publish_stats();
+    return true;
+  }
+  return false;
+}
+
+bool SmartIotInternals::BootNormal::__handleAdvertise(char * topic, char * payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total) {
+  if (
+    _mqttTopicLevelsCount >= 3
+    && strcmp_P(_mqttTopicLevels.get()[0], PSTR("log")) == 0
+    && strcmp_P(_mqttTopicLevels.get()[1], PSTR("advertise")) == 0
+    && (
+      strcmp_P(_mqttTopicLevels.get()[2], PSTR("set")) == 0
+      || (strcmp(_mqttTopicLevels.get()[2], Interface::get().getConfig().get().deviceId) == 0
+          && strcmp_P(_mqttTopicLevels.get()[3], PSTR("set")) == 0)
+      )
+    ) {
+    _publish_config();
+    return true;
+  }
+  return false;
+}
+
+
 bool SmartIotInternals::BootNormal::__handleConfig(char * topic, char * payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total) {
   if (
-    _mqttTopicLevelsCount == 4
-    && strcmp_P(_mqttTopicLevels.get()[1], PSTR("$implementation")) == 0
-    && strcmp_P(_mqttTopicLevels.get()[2], PSTR("config")) == 0
-    && strcmp_P(_mqttTopicLevels.get()[3], PSTR("set")) == 0
+    _mqttTopicLevelsCount >= 3
+    && strcmp_P(_mqttTopicLevels.get()[0], PSTR("setup")) == 0
+    && strcmp_P(_mqttTopicLevels.get()[1], PSTR("config")) == 0
+    && (
+      strcmp_P(_mqttTopicLevels.get()[2], PSTR("set")) == 0
+      || (strcmp(_mqttTopicLevels.get()[2], Interface::get().getConfig().get().deviceId) == 0
+          && strcmp_P(_mqttTopicLevels.get()[3], PSTR("set")) == 0)
+      )
     ) {
-    Interface::get().getMqttClient().publish(_prefixMqttTopic(PSTR("/$implementation/config/set")), 1, true, "");
+    Interface::get().getMqttClient().publish(topic, 1, true, "");
     if (Interface::get().getConfig().patch(_mqttPayloadBuffer.get())) {
       Interface::get().getLogger() << F("✔ Configuration updated") << endl;
       _flaggedForReboot = true;

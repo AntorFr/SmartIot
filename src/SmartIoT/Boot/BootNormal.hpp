@@ -115,6 +115,7 @@ class BootNormal : public Boot {
   char* _deviceMqttTopic(PGM_P topic,bool set = false);
   char* _nodeMqttTopic(SmartIotNode* nodeIndex,bool set= false);
   void _publish_stats();
+  bool _publish_config();
   bool _publishOtaStatus(int status, const char* info = nullptr);
   void _endOtaUpdate(bool success, uint8_t update_error = UPDATE_ERROR_OK);
 
@@ -127,5 +128,8 @@ class BootNormal : public Boot {
   bool __handleConfig(char* topic, char* payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total);
   bool __handleNodeProperty(char* topic, char* payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total);
   bool __handleNode(char* topic, char* payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total);
+  bool __handleHeartbeat(char* topic, char* payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total);
+  bool __handleAdvertise(char * topic, char * payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total);
+
 };
 }  // namespace SmartIotInternals
