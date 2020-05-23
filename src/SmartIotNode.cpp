@@ -49,6 +49,7 @@ SmartIotNode::SmartIotNode(const char* id, const char* name, const char* type, c
 , _name(name)
 , _type(type)
 , runLoopDisconnected(false)
+, _settable(false)
 , _properties()
 , _inputHandler(inputHandler) {
   if (strlen(id) + 1 > MAX_NODE_ID_LENGTH || strlen(type) + 1 > MAX_NODE_TYPE_LENGTH) {
@@ -63,6 +64,12 @@ SmartIotNode::SmartIotNode(const char* id, const char* name, const char* type, c
 SmartIotNode::~SmartIotNode() {
     Helpers::abort(F("✖✖ ~SmartIotNode(): Destruction of SmartIotNode object not possible\n  Hint: Don't create SmartIotNode objects as a local variable (e.g. in setup())"));
     return;  // never reached, here for clarity
+}
+
+uint16_t SmartIotNode::send(const JsonObject& data) {
+  String value;
+  serializeJson(data, value);
+  SmartIotNode::send(value);
 }
 
 uint16_t SmartIotNode::send(const String& value) {

@@ -120,7 +120,6 @@ bool Config::load() {
   _configStruct.ota.enabled = reqOtaEnabled;
 
   /* Parse the settings */
-
   JsonObject settingsObject = parsedJson["settings"].as<JsonObject>();
 
   for (ISmartIotSetting* iSetting : ISmartIotSetting::settings) {
@@ -130,6 +129,9 @@ bool Config::load() {
       if (iSetting->isBool()) {
         SmartIotSetting<bool>* setting = static_cast<SmartIotSetting<bool>*>(iSetting);
         setting->set(reqSetting.as<bool>());
+      } else if (iSetting->isInt()) {
+        SmartIotSetting<int32_t>* setting = static_cast<SmartIotSetting<int32_t>*>(iSetting);
+        setting->set(reqSetting.as<int32_t>());
       } else if (iSetting->isLong()) {
         SmartIotSetting<long>* setting = static_cast<SmartIotSetting<long>*>(iSetting);
         setting->set(reqSetting.as<long>());
@@ -142,7 +144,19 @@ bool Config::load() {
       }
     }
   }
-
+  /* Parse settings */
+  if (SmartIotNode::nodes.size()>0 && parsedJson.containsKey("nodes")) {
+    JsonObject nodesObject = parsedJson["nodes"].as<JsonObject>();
+    for (SmartIotNode* iNode : SmartIotNode::nodes) {
+      if (nodesObject.containsKey(iNode->getId())){
+        JsonObject nodeSetting = nodesObject[iNode->getId()];
+        if (nodeSetting.containsKey("node_name")) {
+          iNode->setName(strdup(nodeSetting["node_name"].as<const char*>()));
+          // Interface::get().getLogger() << F(" > Node id ") << iNode->getId() << F(" name changed to ") << nodeSetting["node_name"].c_str() << endl;
+        }
+      }
+    }
+  }
   _valid = true;
   return true;
 }
@@ -330,7 +344,10 @@ void Config::log() const {
       if (iSetting->isBool()) {
         SmartIotSetting<bool>* setting = static_cast<SmartIotSetting<bool>*>(iSetting);
         Interface::get().getLogger() << setting->getName() << F(": ") << setting->get() << F(" (") << (setting->wasProvided() ? F("set") : F("default")) << F(")");
-      } else if (iSetting->isLong()) {
+      } else if (iSetting->isInt()) {
+        SmartIotSetting<int32_t>* setting = static_cast<SmartIotSetting<int32_t>*>(iSetting);
+        Interface::get().getLogger() << setting->getName() << F(": ") << setting->get() << F(" (") << (setting->wasProvided() ? F("set") : F("default")) << F(")");
+      }else if (iSetting->isLong()) {
         SmartIotSetting<long>* setting = static_cast<SmartIotSetting<long>*>(iSetting);
         Interface::get().getLogger() << setting->getName() << F(": ") << setting->get() << F(" (") << (setting->wasProvided() ? F("set") : F("default")) << F(")");
       } else if (iSetting->isDouble()) {

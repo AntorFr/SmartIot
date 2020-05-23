@@ -21,6 +21,7 @@ class ISmartIotSetting {
   const char* getDescription() const;
 
   virtual bool isBool() const { return false; }
+  virtual bool isInt() const { return false; }
   virtual bool isLong() const { return false; }
   virtual bool isDouble() const { return false; }
   virtual bool isConstChar() const { return false; }
@@ -58,6 +59,7 @@ class SmartIotSetting : public SmartIotInternals::ISmartIotSetting {
   void set(T value);
 
   bool isBool() const;
+  bool isInt() const;
   bool isLong() const;
   bool isDouble() const;
   bool isConstChar() const;

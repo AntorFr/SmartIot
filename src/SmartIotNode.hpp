@@ -16,6 +16,7 @@ class SmartIotClass;
 class Property;
 class BootNormal;
 class BootConfig;
+class Config;
 class SendingPromise;
 
 class PropertyInterface {
@@ -76,6 +77,7 @@ class SmartIotNode {
   friend SmartIotInternals::SmartIotClass;
   friend SmartIotInternals::BootNormal;
   friend SmartIotInternals::BootConfig;
+  friend SmartIotInternals::Config;
 
  public:
   SmartIotNode(const char* id, const char* name, const char* type, const SmartIotInternals::NodeInputHandler& nodeInputHandler = [](const String& value) { return false; });
@@ -84,8 +86,12 @@ class SmartIotNode {
   const char* getId() const { return _id; }
   const char* getType() const { return _type; }
   const char* getName() const {return _name; }
-  void setHandler(const SmartIotInternals::NodeInputHandler& inputHandler) { _inputHandler = inputHandler; } 
 
+  void setName(const char* name ) { _name=name;}
+  void setHandler(const SmartIotInternals::NodeInputHandler& inputHandler) {_settable = true; _inputHandler = inputHandler; } 
+  bool isSettable() const { return _settable; }
+
+  uint16_t send(const JsonObject& data);
   uint16_t send(const String& value);
 
   SmartIotInternals::PropertyInterface& advertise(const char* id);
@@ -109,7 +115,9 @@ class SmartIotNode {
     for (SmartIotNode* iNode : SmartIotNode::nodes) {
       if (strcmp(id, iNode->getId()) == 0) return iNode;
     }
-
+    for (SmartIotNode* iNode : SmartIotNode::nodes) {
+      if (strcmp(id, iNode->getName()) == 0) return iNode;
+    }
     return 0;
   }
 
@@ -117,9 +125,13 @@ class SmartIotNode {
   const char* _id;
   const char* _name;
   const char* _type;
+  bool _settable;
+
+  //to be remove >
   bool _range;
   uint16_t _lower;
   uint16_t _upper;
+  //<
 
   bool runLoopDisconnected;
 

@@ -14,6 +14,7 @@
 #include "Constants.hpp"
 #include "Limits.hpp"
 #include "../SmartIotBootMode.hpp"
+#include "../SmartIotNode.hpp"
 #include "../SmartIotSetting.hpp"
 #include "../StreamingOperator.hpp"
 

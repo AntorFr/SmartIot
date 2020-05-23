@@ -178,7 +178,7 @@ void BootNormal::loop() {
     _publish_stats();
   }
 
-  Interface::get().loopFunction();
+  Interface::get().getLoop().run();
 }
 
 void BootNormal::_publish_stats(){
@@ -202,7 +202,7 @@ void BootNormal::_publish_stats(){
     char uptimeStr[20 + 1];
     itoa(_uptime.getSeconds(), uptimeStr, 10);
     Interface::get().getLogger() << F("  • Uptime: ") << uptimeStr << F("s") << endl;
-    statsData[F("uptime")] = _uptime.getSeconds();
+    statsData[F("uptime")] = static_cast<unsigned long> (_uptime.getSeconds());
 
     uint32_t freeMem= ESP.getFreeHeap();
     char freeMemStr[20 + 1];
@@ -232,7 +232,7 @@ char* BootNormal::_nodeMqttTopic(SmartIotNode* node,bool set) {
   _prefixMqttTopic();
   strcat(_mqttTopic.get(), node->getType());
   strcat_P(_mqttTopic.get(), PSTR("/"));
-  strcat(_mqttTopic.get(), node->getId());
+  strcat(_mqttTopic.get(), node->getName());
   if (set) strcat_P(_mqttTopic.get(), PSTR("/set"));
   return _mqttTopic.get();
 }
@@ -242,7 +242,7 @@ char* BootNormal::_firmwareMqttTopic(PGM_P topic) {
   strcat_P(_mqttTopic.get(), topic);
   strcat_P(_mqttTopic.get(), PSTR("/"));
   strcat(_mqttTopic.get(), Interface::get().firmware.name);
-  strcat_P(_mqttTopic.get(), PSTR("/+"));
+  strcat_P(_mqttTopic.get(), PSTR("/#"));
   return _mqttTopic.get();
 }
 
@@ -257,7 +257,7 @@ char* BootNormal::_prefixMqttTopic(PGM_P topic,bool set) {
   return _mqttTopic.get();
 }
 
-bool BootNormal::_publishOtaStatus(int status, const char* info) {
+bool BootNormal::_publishOtaStatus(uint32_t status, const char* info) {
   DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(3));
   JsonObject data = jsonBuffer.to<JsonObject>();
   data["status"]  = status;
@@ -279,7 +279,7 @@ void BootNormal::_endOtaUpdate(bool success, uint8_t update_error) {
     _publishOtaStatus(200);  // 200 OK
     _flaggedForReboot = true;
   } else {
-    int code;
+    uint8_t code;
     String info;
     switch (update_error) {
       case UPDATE_ERROR_SIZE:               // new firmware size is zero
@@ -471,7 +471,7 @@ bool BootNormal::_publish_config() {
   uint8_t quality = Helpers::rssiToPercentage(WiFi.RSSI());
   stats[F("wifi_quality")] = quality;
   _uptime.update();
-  stats[F("uptime")] = _uptime.getSeconds();
+  stats[F("uptime")] = static_cast<unsigned long> (_uptime.getSeconds());
   uint32_t freeMem= ESP.getFreeHeap();
   stats[F("freeMem")] = freeMem;
   uint16_t packetId;
@@ -588,9 +588,11 @@ bool BootNormal::_subscribe(){
       if (SmartIotNode::nodes.size()>0) {
         Interface::get().getLogger() << F(" 〽 Start subscribing to SmartIoT MQTT node topics: ") << endl;
         for (SmartIotNode* node : SmartIotNode::nodes) {
-          packetId = Interface::get().getMqttClient().subscribe(_nodeMqttTopic(node,true), 1);
-          Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
-          if (packetId == 0) return false;
+          if (node->isSettable()) {
+            packetId = Interface::get().getMqttClient().subscribe(_nodeMqttTopic(node,true), 1);
+            Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
+            if (packetId == 0) return false;
+          }
         }
       } 
       _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::PUB_READY;
@@ -904,7 +906,7 @@ bool SmartIotInternals::BootNormal::__handleOTAUpdates(char* topic, char* payloa
         Interface::get().event.sizeTotal = _otaSizeTotal;
         Interface::get().eventHandler(Interface::get().event);
 
-        static int count = 0;
+        static uint32_t count = 0;
         if (count == 100) {
           _publishOtaStatus(206, progress.c_str());  // 206 Partial Content
           count = 0;

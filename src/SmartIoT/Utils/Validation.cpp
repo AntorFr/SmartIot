@@ -416,6 +416,21 @@ ConfigValidationResult Validation::_validateConfigSettings(const JsonObject obje
         setReason(Issue::Missing);
         return result;
       }
+    } else if (iSetting->isInt()) {
+      SmartIotSetting<int32_t>* setting = static_cast<SmartIotSetting<int32_t>*>(iSetting);
+
+      if (!settingElement.isNull()) {
+        if (!settingElement.is<int32_t>()) {
+          setReason(Issue::Type);
+          return result;
+        } else if (!setting->validate(settingElement.as<int32_t>())) {
+          setReason(Issue::Validator);
+          return result;
+        }
+      } else if (setting->isRequired()) {
+        setReason(Issue::Missing);
+        return result;
+      }
     } else if (iSetting->isLong()) {
       SmartIotSetting<long>* setting = static_cast<SmartIotSetting<long>*>(iSetting);
 

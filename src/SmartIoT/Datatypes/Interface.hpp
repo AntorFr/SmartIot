@@ -3,6 +3,7 @@
 #include <AsyncMqttClient.h>
 #include "../Logger.hpp"
 #include "../Blinker.hpp"
+#include "../LoopFunction.hpp"
 #include "../Constants.hpp"
 #include "../Config.hpp"
 #include "../Limits.hpp"
@@ -16,6 +17,7 @@ namespace SmartIotInternals {
 class Logger;
 class Blinker;
 class Config;
+class LoopFunction;
 class SendingPromise;
 class SmartIotClass;
 
@@ -55,13 +57,15 @@ class InterfaceData {
     bool resetFlag;
   } reset;
 
+
+
   bool disable;
   bool flaggedForSleep;
 
   GlobalInputHandler globalInputHandler;
   BroadcastHandler broadcastHandler;
   OperationFunction setupFunction;
-  OperationFunction loopFunction;
+  //OperationFunction loopFunction;
   EventHandler eventHandler;
 
   /***** Runtime data *****/
@@ -72,6 +76,7 @@ class InterfaceData {
   Config& getConfig() { return *_config; }
   AsyncMqttClient& getMqttClient() { return *_mqttClient; }
   SendingPromise& getSendingPromise() { return *_sendingPromise; }
+  LoopFunction& getLoop() { return *_loopFunction; }
 
  private:
   Logger* _logger;
@@ -79,6 +84,7 @@ class InterfaceData {
   Config* _config;
   AsyncMqttClient* _mqttClient;
   SendingPromise* _sendingPromise;
+  LoopFunction* _loopFunction;
 };
 
 class Interface {

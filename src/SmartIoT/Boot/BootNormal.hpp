@@ -10,7 +10,6 @@
 #define SMARTIOT_MDNS 1
 #endif
 
-
 #ifdef ESP32
 #include <WiFi.h>
 #include <Update.h>
@@ -116,7 +115,7 @@ class BootNormal : public Boot {
   char* _nodeMqttTopic(SmartIotNode* nodeIndex,bool set= false);
   void _publish_stats();
   bool _publish_config();
-  bool _publishOtaStatus(int status, const char* info = nullptr);
+  bool _publishOtaStatus(uint32_t status, const char* info = nullptr);
   void _endOtaUpdate(bool success, uint8_t update_error = UPDATE_ERROR_OK);
 
   // _onMqttMessage Helpers

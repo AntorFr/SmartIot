@@ -19,6 +19,7 @@ InterfaceData::InterfaceData()
   , _blinker{ nullptr }
   , _config{ nullptr }
   , _mqttClient{ nullptr }
+  , _loopFunction{ nullptr }
   , _sendingPromise{ nullptr } {
 }
 

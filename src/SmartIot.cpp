@@ -31,7 +31,7 @@ SmartIotClass::SmartIotClass()
   Interface::get().globalInputHandler = [](const SmartIotNode& node, const String& value) { return false; };
   Interface::get().broadcastHandler = [](const String& level, const String& value) { return false; };
   Interface::get().setupFunction = []() {};
-  Interface::get().loopFunction = []() {};
+  Interface::get()._loopFunction = &_loopFunction;
   Interface::get().eventHandler = [](const SmartIotEvent& event) {};
   Interface::get().ready = false;
   Interface::get()._mqttClient = &_mqttClient;
@@ -76,6 +76,12 @@ void SmartIotClass::setup() {
   for (ISmartIotSetting* iSetting : ISmartIotSetting::settings) {
     if (iSetting->isBool()) {
       SmartIotSetting<bool>* setting = static_cast<SmartIotSetting<bool>*>(iSetting);
+      if (!setting->isRequired() && !setting->validate(setting->get())) {
+        defaultSettingsValuesValid = false;
+        break;
+      }
+    } else if (iSetting->isInt()) {
+      SmartIotSetting<int32_t>* setting = static_cast<SmartIotSetting<int32_t>*>(iSetting);
       if (!setting->isRequired() && !setting->validate(setting->get())) {
         defaultSettingsValuesValid = false;
         break;
@@ -288,13 +294,30 @@ SmartIotClass& SmartIotClass::setSetupFunction(const OperationFunction& function
   return *this;
 }
 
-SmartIotClass& SmartIotClass::setLoopFunction(const OperationFunction& function) {
+
+#ifdef ESP32
+SmartIotClass& SmartIotClass::setLoopFunction(const OperationFunction& function, bool multitask,int freq) {
+   return setLoopFunction(function,multitask,static_cast<float>(freq));
+   return *this;
+}
+SmartIotClass& SmartIotClass::setLoopFunction(const OperationFunction& function, bool multitask,float freq) {
   _checkBeforeSetup(F("setLoopFunction"));
-
-  Interface::get().loopFunction = function;
-
+  Interface::get().getLoop().setFunction(function,freq,multitask);
   return *this;
 }
+#elif defined(ESP8266)
+SmartIotClass& SmartIotClass::setLoopFunction(const OperationFunction& function, int freq) {
+  return setLoopFunction(function, static_cast<float>(freq));
+
+}
+
+SmartIotClass& SmartIotClass::setLoopFunction(const OperationFunction& function, float freq) {
+  _checkBeforeSetup(F("setLoopFunction"));
+  Interface::get().getLoop().setFunction(function,freq,false);
+  return *this;
+}
+#endif
+
 
 SmartIotClass& SmartIotClass::setSmartIotBootMode(SmartIotBootMode bootMode) {
   _checkBeforeSetup(F("setSmartIotBootMode"));
@@ -354,9 +377,6 @@ Logger& SmartIotClass::getLogger() {
   return _logger;
 }
 
-#ifdef ESP32
-//FIXME: implement for ESP32
-#elif defined(ESP8266)
 void SmartIotClass::prepareToSleep() {
   Interface::get().getLogger() << F("Flagged for sleep by sketch") << endl;
   if (Interface::get().ready) {
@@ -370,10 +390,20 @@ void SmartIotClass::prepareToSleep() {
   }
 }
 
+#ifdef ESP32
+void SmartIotClass::doDeepSleep(uint64_t time_us) {
+  Interface::get().getLogger() << F("💤 Device is deep sleeping...") << endl;
+  Serial.flush();
+  //esp_deep_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
+  esp_sleep_enable_timer_wakeup(time_us);
+  esp_deep_sleep_start();
+}
+#elif defined(ESP8266)
 void SmartIotClass::doDeepSleep(uint64_t time_us, RFMode mode) {
   Interface::get().getLogger() << F("💤 Device is deep sleeping...") << endl;
   Serial.flush();
   ESP.deepSleep(time_us, mode);
+
 }
 #endif // ESP32
 

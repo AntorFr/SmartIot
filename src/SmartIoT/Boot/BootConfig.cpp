@@ -383,6 +383,9 @@ void BootConfig::_onDeviceInfoRequest(AsyncWebServerRequest *request) {
         if (iSetting->isBool()) {
           SmartIotSetting<bool>* setting = static_cast<SmartIotSetting<bool>*>(iSetting);
           jsonSetting["default"] = setting->get();
+        } else if (iSetting->isInt()) {
+          SmartIotSetting<int32_t>* setting = static_cast<SmartIotSetting<int32_t>*>(iSetting);
+          jsonSetting["default"] = setting->get();
         } else if (iSetting->isLong()) {
           SmartIotSetting<long>* setting = static_cast<SmartIotSetting<long>*>(iSetting);
           jsonSetting["default"] = setting->get();

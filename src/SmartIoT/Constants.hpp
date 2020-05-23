@@ -36,5 +36,4 @@ namespace SmartIotInternals {
   const char CONFIG_UI_BUNDLE_PATH[] = "/SmartIoT/ui_bundle.gz";
   const char CONFIG_NEXT_BOOT_MODE_FILE_PATH[] = "/SmartIoT/NEXTMODE";
   const char SETUP_FILE_PATH[] = "/SmartIoT/setup.json";
-  const char CONFIG_FILE_PATH_FILE_PATH[] = "/SmartIoT/config.json";
 }  // namespace SmartIotInternals

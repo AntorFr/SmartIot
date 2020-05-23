@@ -71,6 +71,9 @@ template <class T>
 bool SmartIotSetting<T>::isBool() const { return false; }
 
 template <class T>
+bool SmartIotSetting<T>::isInt() const { return false; }
+
+template <class T>
 bool SmartIotSetting<T>::isLong() const { return false; }
 
 template <class T>
@@ -83,6 +86,11 @@ template<>
 bool SmartIotSetting<bool>::isBool() const { return true; }
 template<>
 const char* SmartIotSetting<bool>::getType() const { return "bool"; }
+
+template<>
+bool SmartIotSetting<int32_t>::isInt() const { return true; }
+template<>
+const char* SmartIotSetting<int32_t>::getType() const { return "int"; }
 
 template<>
 bool SmartIotSetting<long>::isLong() const { return true; }
@@ -101,6 +109,7 @@ const char* SmartIotSetting<const char*>::getType() const { return "string"; }
 
 // Needed because otherwise undefined reference to
 template class SmartIotSetting<bool>;
+template class SmartIotSetting<int>;
 template class SmartIotSetting<long>;
 template class SmartIotSetting<double>;
 template class SmartIotSetting<const char*>;
