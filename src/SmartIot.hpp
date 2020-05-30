@@ -37,7 +37,7 @@
 
 namespace SmartIotInternals {
 class SmartIotClass {
-  friend class ::SmartIotNode;
+  friend class::SmartIotNode;
   friend SendingPromise;
 
  public:

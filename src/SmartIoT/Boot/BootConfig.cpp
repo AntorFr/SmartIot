@@ -357,7 +357,7 @@ void BootConfig::_onDeviceInfoRequest(AsyncWebServerRequest *request) {
     numSettings * JSON_OBJECT_SIZE(5)); // Objects in "settings"
   JsonObject json = jsonDoc.to<JsonObject>();
   json["hardware_device_id"] = DeviceId::get();
-  json["SmartIoT_esp8266_version"] = SMARTIOT_ESP8266_VERSION;
+  json["SmartIoT_version"] = SMARTIOT_VERSION;
   JsonObject firmware = json.createNestedObject("firmware");
   firmware["name"] = reinterpret_cast<const char*>(Interface::get().firmware.name);
   firmware["version"] = reinterpret_cast<const char*>(Interface::get().firmware.version);

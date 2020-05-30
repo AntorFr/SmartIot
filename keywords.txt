@@ -8,6 +8,7 @@ SmartIotSetting	KEYWORD1
 SmartIotEvent	KEYWORD1
 SmartIotEventType	KEYWORD1
 SmartIotRange	KEYWORD1
+SmartIotOwTemp  KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
@@ -51,6 +52,7 @@ setHandler KEYWORD2
 advertise	KEYWORD2
 settable	KEYWORD2
 setProperty	KEYWORD2
+send    KEYWORD2
 
 # SmartIotSetting
 

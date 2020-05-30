@@ -51,6 +51,7 @@ SmartIotNode::SmartIotNode(const char* id, const char* name, const char* type, c
 , runLoopDisconnected(false)
 , _settable(false)
 , _properties()
+, _retained(false)
 , _inputHandler(inputHandler) {
   if (strlen(id) + 1 > MAX_NODE_ID_LENGTH || strlen(type) + 1 > MAX_NODE_TYPE_LENGTH) {
     Helpers::abort(F("✖ SmartIotNode(): either the id or type string is too long"));
@@ -69,12 +70,12 @@ SmartIotNode::~SmartIotNode() {
 uint16_t SmartIotNode::send(const JsonObject& data) {
   String value;
   serializeJson(data, value);
-  SmartIotNode::send(value);
+  send(value);
 }
 
 uint16_t SmartIotNode::send(const String& value) {
   if (!Interface::get().ready) {
-    Interface::get().getLogger() << F("✖ setNodeProperty(): impossible now") << endl;
+    Interface::get().getLogger() << F("✖ send(): impossible now") << endl;
     return 0;
   }
 
@@ -85,7 +86,7 @@ uint16_t SmartIotNode::send(const String& value) {
   strcat_P(topic, PSTR("/"));
   strcat(topic, _name);
 
-  uint16_t packetId = Interface::get().getMqttClient().publish(topic, 1, true, value.c_str());
+  uint16_t packetId = Interface::get().getMqttClient().publish(topic, 1, _retained, value.c_str());
 
   delete[] topic;
 

@@ -87,9 +87,11 @@ class SmartIotNode {
   const char* getType() const { return _type; }
   const char* getName() const {return _name; }
 
+  void setRetained(const bool retained = false) { _retained = retained; }
   void setName(const char* name ) { _name=name;}
   void setHandler(const SmartIotInternals::NodeInputHandler& inputHandler) {_settable = true; _inputHandler = inputHandler; } 
   bool isSettable() const { return _settable; }
+  bool isRetained() const { return _retained; }
 
   uint16_t send(const JsonObject& data);
   uint16_t send(const String& value);
@@ -108,8 +110,7 @@ class SmartIotNode {
   virtual void onReadyToOperate() {}
   virtual bool handleInput(const String& value);
 
- private:
-  const std::vector<SmartIotInternals::Property*>& getProperties() const;
+  static std::vector<SmartIotNode*> nodes;
 
   static SmartIotNode* find(const char* id) {
     for (SmartIotNode* iNode : SmartIotNode::nodes) {
@@ -121,11 +122,13 @@ class SmartIotNode {
     return 0;
   }
 
-
+ private:
+  const std::vector<SmartIotInternals::Property*>& getProperties() const;
   const char* _id;
   const char* _name;
   const char* _type;
   bool _settable;
+  bool _retained;
 
   //to be remove >
   bool _range;
@@ -140,5 +143,5 @@ class SmartIotNode {
 
   SmartIotInternals::PropertyInterface _propertyInterface;
 
-  static std::vector<SmartIotNode*> nodes;
+
 };

@@ -242,7 +242,7 @@ char* BootNormal::_firmwareMqttTopic(PGM_P topic) {
   strcat_P(_mqttTopic.get(), topic);
   strcat_P(_mqttTopic.get(), PSTR("/"));
   strcat(_mqttTopic.get(), Interface::get().firmware.name);
-  strcat_P(_mqttTopic.get(), PSTR("/#"));
+  strcat_P(_mqttTopic.get(), PSTR("/firmware"));
   return _mqttTopic.get();
 }
 
@@ -449,7 +449,7 @@ bool BootNormal::_publish_config() {
   auto numSettings = ISmartIotSetting::settings.size();
   auto numNodes = SmartIotNode::nodes.size();
   DynamicJsonDocument jsonBuffer (
-    JSON_OBJECT_SIZE(6) + //data
+    JSON_OBJECT_SIZE(5) + //data
     JSON_OBJECT_SIZE(6) + //stats
     JSON_OBJECT_SIZE(6) + //fw
     JSON_OBJECT_SIZE(6) + //implementation
@@ -458,8 +458,8 @@ bool BootNormal::_publish_config() {
     JSON_ARRAY_SIZE(numSettings) + // Array "settings"
     numSettings * JSON_OBJECT_SIZE(3)); // Objects in "settings";
   JsonObject data = jsonBuffer.to<JsonObject>();
-  data[F("version")]=SMARTIOT_VERSION;
   data[F("name")]= Interface::get().getConfig().get().name;
+  data[F("id")]=  Interface::get().getConfig().get().deviceId;
   //data[F("mac")]= WiFi.macAddress().c_str();
 
   IPAddress localIp = WiFi.localIP();
@@ -488,9 +488,8 @@ bool BootNormal::_publish_config() {
     implementation[F("device")]= "esp8266";  
   #endif // ESP32
   //implementation[F("config")]= Interface::get().getConfig().getSafeConfigFile();
-  implementation[F("version")]=SMARTIOT_ESP8266_VERSION;
   implementation[F("ota")]=Interface::get().getConfig().get().ota.enabled;
-
+  implementation[F("version")]=SMARTIOT_VERSION;
   if (SmartIotNode::nodes.size()) {
     JsonArray nodesData = data.createNestedArray("nodes");
     for (SmartIotNode* node : SmartIotNode::nodes) {
@@ -609,10 +608,6 @@ void BootNormal::_onMqttConnected() {
   _statsTimer.activate();
 
   Update.end();
-
-  Interface::get().getLogger() << F("Sending initial information...") << endl;
-
-  _advertise();
 }
 
 void BootNormal::_onMqttDisconnected(AsyncMqttClientDisconnectReason reason) {
@@ -756,7 +751,42 @@ bool SmartIotInternals::BootNormal::__fillPayloadBuffer(char * topic, char * pay
 }
 
 bool SmartIotInternals::BootNormal::__handleOTAUpdates(char* topic, char* payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total) {
-  if (
+  if(
+    _mqttTopicLevelsCount ==  4 // it only a firmware info.
+    && strcmp_P(_mqttTopicLevels.get()[0], PSTR("setup")) == 0
+    && strcmp_P(_mqttTopicLevels.get()[1], PSTR("ota")) == 0
+    && strcmp(_mqttTopicLevels.get()[2], Interface::get().firmware.name) == 0
+    && strcmp_P(_mqttTopicLevels.get()[3], PSTR("firmware")) == 0
+    ){
+    Interface::get().getLogger() << F("Receiving OTA info") << endl;
+    if (!Interface::get().getConfig().get().ota.enabled) {
+      Interface::get().getLogger() << F("✖ Ignore it, OTA not enabled") << endl;
+      return true;
+    } else {
+      DynamicJsonDocument otaJson (JSON_OBJECT_SIZE(9)); 
+      DeserializationError error = deserializeJson(otaJson, payload);
+      if (error) {
+        Interface::get().getLogger() << F("✖ Bad OTA data format: ") << error.c_str() << endl;
+        return true;
+      }
+      const char* fw_version = otaJson[F("version")];
+      const char* fw_ota = otaJson[F("md5")];
+      if(strcmp(fw_version, Interface::get().firmware.version) != 0) {
+        Interface::get().getLogger() << F("> New firware version received: ") << fw_version << F(" subscrib to it") << endl;
+        _firmwareMqttTopic(PSTR("setup/ota"));
+        strcat_P(_mqttTopic.get(), PSTR("/"));
+        strcat(_mqttTopic.get(), fw_ota);
+        Interface::get().getMqttClient().subscribe(_mqttTopic.get(), 1);
+        Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
+
+
+      } else {
+        Interface::get().getLogger() << F("✖ Ignore it, already uptodate") << endl;
+      }
+      return true;    
+    }
+  }
+  else if (
     _mqttTopicLevelsCount ==  5
     && strcmp_P(_mqttTopicLevels.get()[0], PSTR("setup")) == 0
     && strcmp_P(_mqttTopicLevels.get()[1], PSTR("ota")) == 0
@@ -784,6 +814,8 @@ bool SmartIotInternals::BootNormal::__handleOTAUpdates(char* topic, char* payloa
         Update.setMD5(firmwareMd5);
         _publishOtaStatus(202);
         _otaOngoing = true;
+
+          Interface::get().getLoop().stop();
 
         Interface::get().getLogger() << F("↕ OTA started") << endl;
         Interface::get().getLogger() << F("Triggering OTA_STARTED event...") << endl;

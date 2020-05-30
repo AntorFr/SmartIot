@@ -38,7 +38,7 @@ void LoopFunction::setFunction(const OperationFunction& operationFunction,float 
   _function = operationFunction;
   _freq = freq;
   _multitask = multitask;
-  if (_freq != 0 || _multitask) {start();}
+  _init = false;
 }
 
 void LoopFunction::setFreq(float freq) {

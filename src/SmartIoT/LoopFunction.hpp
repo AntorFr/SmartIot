@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Ticker.h>
-#include "SmartIot/Datatypes/Callbacks.hpp"
+#include "Datatypes/Callbacks.hpp"
 
 
 
