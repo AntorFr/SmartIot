@@ -76,6 +76,8 @@
         "stack": "cpp",
         "unordered_set": "cpp",
         "*.tcc": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "__memory": "cpp",
+        "filesystem": "cpp"
     }
 }

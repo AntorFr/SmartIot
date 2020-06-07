@@ -4,8 +4,9 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <Ticker.h>
-#include "SmartIotNode.hpp"
-#include "SmartIot/Datatypes/Interface.hpp"
+#include <SmartIot.h>
+//#include "../../SmartIotNode.hpp"
+//#include "../../SmartIot/Datatypes/Interface.hpp"
 
 class SmartIotOwTemp;
 

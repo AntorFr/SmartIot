@@ -7,7 +7,8 @@ void OwTempDevice::setAddress(DeviceAddress add){
     snprintf(_address, (2*8+1)+1 , "%02x%02x%02x%02x%02x%02x", add[0], add[1], add[2], add[3], add[4], add[5],add[6],add[7]);
 }
 
-SmartIotOwTemp::SmartIotOwTemp(const char* id, const char* name, const char* type, const NodeInputHandler& inputHandler):SmartIotNode(id,name,type,inputHandler)
+SmartIotOwTemp::SmartIotOwTemp(const char* id, const char* name, const char* type, const NodeInputHandler& inputHandler)
+    :SmartIotNode(id,name,type,inputHandler)
     ,_resolution(12)
     ,_nbDevices(0)
     ,_devices()
