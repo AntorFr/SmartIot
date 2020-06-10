@@ -18,18 +18,26 @@ LedObject::LedObject(const uint8_t nbLed,const uint8_t firstPos, const char* nam
     ,_gCurrentPalette(CRGB::Black)
     ,_name(name)
     ,_motif('off')
-    ,_show(false)
-    ,_motifInit(false)
+    ,_curentPattern(nullptr)
     {
         _leds = new CRGB [_nbLed];
         fill_solid(_leds,_nbLed, CRGB::Black);
-        _patterns["color"] = &LedObject::solidColor;
-        _patterns["off"] = &LedObject::off;
-        _patterns["blink"] = &LedObject::blink;
-        _patterns["blink1"] = &LedObject::blink1;
+
+        _patterns["off"]= [](LedObject* ledObj) -> LedPattern* { return new OffPattern(ledObj); };
+        _patterns["color"]= [](LedObject* ledObj) -> LedPattern* { return new ColorPattern(ledObj); };
+        _patterns["blink"]= [](LedObject* ledObj) -> LedPattern* { return new BlinkPattern(ledObj); };
 
 }
 
+ void LedObject::setColor(CRGB color){
+     _color=color;
+     if (_curentPattern) {_curentPattern->init();}
+}
+
+void LedObject::setSpeed(uint8_t speed) {
+    _speed = speed;
+    if (_curentPattern) {_curentPattern->init();}
+}
 
 void LedObject::dimAll(byte value)
 {
@@ -38,52 +46,33 @@ void LedObject::dimAll(byte value)
     }
 }
 
-
-void LedObject::solidColor()
-{
-    if(!_motifInit){
-    fill_solid(_leds,_nbLed, _color);
-    show();
-    _motifInit=true;
+void LedObject::setMotif(String motif) {
+    //_motifInit=false; 
+    _motif = motif;
+    if (_patterns.count(_motif)>0) {
+        _curentPattern = _patterns[_motif](this);
+        if (_curentPattern) {_curentPattern->init();}
+    } else {
+        Interface::get().getLogger() << F("x SetMotif failed, Motif") << motif.c_str() << F("does not exist") << endl;}
     }
-}
-
-void LedObject::off()
-{
-    if(!_motifInit){
-    fill_solid(_leds,_nbLed, CRGB::Black);
-    show();
-    _motifInit=true;
-    }
-
-}
-
-void LedObject::blink()
-{
-    EVERY_N_MILLISECONDS(100000/_speed)
-    {
-        Interface::get().getLogger() << F("Blink from ") << _name  << endl;
-        bool off = (_leds[0]==static_cast<CRGB>(CRGB::Black));
-        if (off) { fill_solid(_leds,_nbLed, _color);} 
-        else { fill_solid(_leds,_nbLed, CRGB::Black);}
-        show();
-    }
-}
-
-void LedObject::blink1()
-{
-    EVERY_N_MILLISECONDS(100000/_speed)
-    {
-        Interface::get().getLogger() << F("Blink from ") << _name  << endl;
-        bool off = (_leds[0]==static_cast<CRGB>(CRGB::Black));
-        if (off) { fill_solid(_leds,_nbLed, _color);} 
-        else { fill_solid(_leds,_nbLed, CRGB::Black);}
-        show();
-    }
-}
-
 
 void LedObject::display() {
+    /*
     auto f = _patterns[_motif];
     (this->*f)();
+    */
+     if(_curentPattern){_curentPattern->display();}
+
+}
+
+void LedObject::showed() {
+    if(_curentPattern){_curentPattern->showed();}
+
+}
+void LedObject::show() {
+    if(_curentPattern){_curentPattern->show();}
+}
+bool LedObject::toShow(){
+    if(_curentPattern){ return _curentPattern->toShow();} 
+    else return false; 
 }

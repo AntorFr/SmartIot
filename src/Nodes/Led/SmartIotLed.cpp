@@ -48,7 +48,7 @@ void SmartIotLed::display(){
     random16_add_entropy(random(65535));
     for (LedObject* iObj : SmartIotLed::objects) {
         iObj->display();
-        if( iObj->_show){
+        if( iObj->toShow()){
             show = true;
             for(int i = 0; i < iObj->_nbLed; ++i) {
                 _leds[i+iObj->_firstPos] = iObj->_leds[i];
@@ -56,6 +56,7 @@ void SmartIotLed::display(){
         }
     }
     if(show) {FastLED.show();}
+    for (LedObject* iObj : SmartIotLed::objects) {iObj->showed();}
 }
 
 LedObject* SmartIotLed::findObject(const char* name){

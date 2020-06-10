@@ -2,27 +2,17 @@
 
 #include <map>
 #include "SmartIotLed.hpp"
+#include "LedPattern.hpp"
 
 class SmartIotLed;
 
-class LedObject;
-
-class LedMotif {
-    friend LedObject;
-
-    public:
-    LedMotif(const LedObject* obj) {_obj=obj;}
-
-    protected:
-        virtual bool init();
-        virtual bool display();
-
-    private:
-        const LedObject* _obj;
-};
+namespace SmartIotInternals {
+    class LedPattern;
+}
 
 class LedObject {
     friend SmartIotLed;
+    friend SmartIotInternals::LedPattern;
     public:
     LedObject(const uint8_t nbLed,const uint8_t firstPos,const char* name);
     void display();
@@ -32,20 +22,25 @@ class LedObject {
     //void colorwaves( CRGB* ledarray, uint16_t numleds, CRGBPalette16& palette);
     //void palettetest( CRGB* ledarray, uint16_t numleds, const CRGBPalette16& gCurrentPalette);
     void dimAll(byte value);
-    void setColor(CRGB color){_color=color;}
-    void setColor(uint8_t r, uint8_t g, uint8_t b){_color=CRGB(r,g,b);}
-    void setSpeed(uint8_t speed) {_speed = speed;}
-    void setMotif(String motif) {_motifInit=false; _motif = motif;}
+    void setColor(CRGB color);
+    void setColor(uint8_t r, uint8_t g, uint8_t b){setColor(CRGB(r,g,b));}
+    CRGB getColor() const {return _color;}
+    uint8_t getSpeed() const {return _speed;}
+    void setSpeed(uint8_t speed);
+    void setMotif(String motif);
     String getMotif() {return _motif;}
     const char* getName() const {return _name;}
     void setSolidColor(CRGB color);
     void setSolidColor(uint8_t r, uint8_t g, uint8_t b);
 
+
+    protected:
+    uint8_t _nbLed;
+    CRGB* _leds;
+
     private:
     const char* _name;
     uint8_t _firstPos;
-    uint8_t _nbLed;
-    CRGB* _leds;
     uint8_t _patternIndex;
     uint8_t _currentPatternIndex;
     uint8_t _brightnessMap[5] = { 16, 32, 64, 128, 255 };
@@ -65,20 +60,17 @@ class LedObject {
     uint8_t _autoplayDuration;
     unsigned long _autoPlayTimeout;
     uint8_t _gHue;
-    bool _show;
     CRGB _color;
     String _motif;
     CRGBPalette16 _gCurrentPalette;
-    void show() {_show =true;}
-    void showed() {_show =false;}
-    bool _motifInit;
 
-    std::map<String, void (LedObject::*)()> _patterns;
+    SmartIotInternals::LedPattern* _curentPattern;
 
-    void solidColor();
-    void off();
-    void blink();
-    void blink1();
+    void show();
+    void showed();
+    bool toShow();
+
+    std::map<String, std::function<SmartIotInternals::LedPattern*(LedObject* ledObj)>> _patterns;
 };
 
 
