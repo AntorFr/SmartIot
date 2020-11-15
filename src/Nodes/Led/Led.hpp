@@ -14,7 +14,7 @@ class LedObject {
     friend SmartIotLed;
     friend SmartIotInternals::LedPattern;
     public:
-    LedObject(const uint8_t nbLed,const uint8_t firstPos,const char* name);
+    LedObject(const uint8_t firstPos,const uint8_t nbLed,const char* name);
     void display();
     //void heatMap(CRGBPalette16 palette, bool up);
     //void heatMap(led_obj obj,CRGBPalette16 palette, bool up);
@@ -26,13 +26,17 @@ class LedObject {
     void setColor(uint8_t r, uint8_t g, uint8_t b){setColor(CRGB(r,g,b));}
     CRGB getColor() const {return _color;}
     uint8_t getSpeed() const {return _speed;}
+    uint8_t getHue() const {return _gHue;}
+    CRGBPalette16 getCurrentPalette() const {return _gCurrentPalette;}
+    CRGBPalette16 getTargetPalette() const {return _gTargetPalette;}
     void setSpeed(uint8_t speed);
-    void setMotif(String motif);
-    String getMotif() {return _motif;}
+    void setPattern(String motif);
+    String getMotif() {return _pattern;}
     const char* getName() const {return _name;}
-    void setSolidColor(CRGB color);
-    void setSolidColor(uint8_t r, uint8_t g, uint8_t b);
 
+    void addAudio(uint8_t pin){_audioPin=pin; pinMode(_audioPin, INPUT);}
+    void audioLoop();
+    uint16_t getAudio() const;
 
     protected:
     uint8_t _nbLed;
@@ -41,30 +45,26 @@ class LedObject {
     private:
     const char* _name;
     uint8_t _firstPos;
-    uint8_t _patternIndex;
-    uint8_t _currentPatternIndex;
-    uint8_t _brightnessMap[5] = { 16, 32, 64, 128, 255 };
-    //uint8_t _brightnessIndex = 0;
-    //COOLING: How much does the air cool as it rises? 
-    // Less cooling = taller flames.  More cooling = shorter flames. 
-    // Default 50, suggested range 20-100
-    uint8_t _cooling;  
-    // SPARKING: What chance (out of 255) is there that a new spark will be lit?
-    // Higher chance = more roaring fire.  Lower chance = more flickery fire.
-    // Default 120, suggested range 50-200.
-    uint8_t _sparking;
     uint8_t _speed;
-    //TProgmemRGBGradientPalettePtr _gGradientPalettes[];
-    uint8_t _gCurrentPaletteNumber;
     uint8_t _autoplay;
     uint8_t _autoplayDuration;
     unsigned long _autoPlayTimeout;
     uint8_t _gHue;
     CRGB _color;
-    String _motif;
+    String _pattern;
     CRGBPalette16 _gCurrentPalette;
+    CRGBPalette16 _gTargetPalette;
+    uint8_t _currentPaletteIdx;
+    
+    void chooseNextColorPalette();
 
     SmartIotInternals::LedPattern* _curentPattern;
+
+    uint8_t _audioPin;
+    uint16_t _volume;
+    uint16_t _avgVolume;
+
+
 
     void show();
     void showed();

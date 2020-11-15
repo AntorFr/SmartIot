@@ -124,16 +124,18 @@ void BootNormal::loop() {
     ESP.restart();
   }
 
+  if (_otaOngoing) return;
+
   for (SmartIotNode* iNode : SmartIotNode::nodes) {
     if (iNode->runLoopDisconnected || (Interface::get().getMqttClient().connected()) && _mqttConnectNotified ) iNode->loop();
   }
+
   if (_mqttReconnectTimer.check()) {
     _mqttConnect();
     return;
   }
 
   if (!Interface::get().getMqttClient().connected()) return;
-
   // here, we are connected to the broker
 
   if (!_advertisementProgress.done) {
@@ -141,7 +143,6 @@ void BootNormal::loop() {
     return;
   }
 
-  if (_otaOngoing) return;
   // here, we finished the advertisement
 
   if (!_mqttConnectNotified) {
@@ -815,7 +816,10 @@ bool SmartIotInternals::BootNormal::__handleOTAUpdates(char* topic, char* payloa
         _publishOtaStatus(202);
         _otaOngoing = true;
 
-          Interface::get().getLoop().stop();
+        //Stop all process to avoid disturbance
+        Interface::get().getLoop().stop();
+        for (SmartIotNode* iNode : SmartIotNode::nodes) {iNode->stop();}
+        
 
         Interface::get().getLogger() << F("↕ OTA started") << endl;
         Interface::get().getLogger() << F("Triggering OTA_STARTED event...") << endl;

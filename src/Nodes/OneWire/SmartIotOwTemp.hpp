@@ -35,7 +35,7 @@ namespace SmartIotInternals {
 
 class SmartIotOwTemp : public SmartIotNode  {
     public:
-    SmartIotOwTemp(const char* id, const char* name, const char* type, const SmartIotInternals::NodeInputHandler& nodeInputHandler = [](const String& value) { return false; });
+    SmartIotOwTemp(const char* id, const char* name, const char* type = "temperature", const SmartIotInternals::NodeInputHandler& nodeInputHandler = [](const String& value) { return false; });
     ~SmartIotOwTemp();
     void setPin(uint8_t pin) {_pin = pin;}
 

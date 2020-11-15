@@ -108,6 +108,7 @@ class SmartIotNode {
   virtual void setup() {}
   virtual void loop() {}
   virtual void onReadyToOperate() {}
+  virtual void stop() {}
   virtual bool handleInput(const String& value);
 
   static std::vector<SmartIotNode*> nodes;
