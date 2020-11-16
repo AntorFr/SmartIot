@@ -1162,17 +1162,18 @@ bool SmartIotInternals::BootNormal::__handleNodeProperty(char * topic, char * pa
 }
 
 bool SmartIotInternals::BootNormal::__handleNode(char * topic, char * payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total) {
-  char* node = _mqttTopicLevels.get()[1];
+  char* node_name = _mqttTopicLevels.get()[1];
+  char* node_type = _mqttTopicLevels.get()[0];
 
   #ifdef DEBUG
-    Interface::get().getLogger() << F("Recived network message for ") << SmartIoTNode->getId() << endl;
+    Interface::get().getLogger() << F("Recived network message for ") << node_name << endl;
   #endif // DEBUG
 
   SmartIotNode* SmartIoTNode = nullptr;
-  SmartIoTNode = SmartIotNode::find(node);
+  SmartIoTNode = SmartIotNode::find(node_name,node_type);
 
   if (!SmartIoTNode) {
-    Interface::get().getLogger() << F("Node ") << node << F(" not registered") << endl;
+    Interface::get().getLogger() << F("Node ") << node_type << F(" / ") << node_name << F(" not registered") << endl;
     return true;
   }
 
@@ -1190,7 +1191,7 @@ bool SmartIotInternals::BootNormal::__handleNode(char * topic, char * payload, c
 
   if (!handled) {
     Interface::get().getLogger() << F("No handlers handled the following packet:") << endl;
-    Interface::get().getLogger() << F("  • Node ID: ") << node << endl;
+    Interface::get().getLogger() << F("  • Node ID: ") << node_type << F(" / ") << node_name << endl;
     Interface::get().getLogger() << F("  • Value: ") << _mqttPayloadBuffer.get() << endl;
   }
 

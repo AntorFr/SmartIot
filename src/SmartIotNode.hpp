@@ -91,6 +91,7 @@ class SmartIotNode {
   void setName(const char* name ) { _name=name;}
   void setHandler(const SmartIotInternals::NodeInputHandler& inputHandler) {_settable = true; _inputHandler = inputHandler; } 
   bool isSettable() const { return _settable; }
+  void notSettable() { _settable = false; }
   bool isRetained() const { return _retained; }
 
   uint16_t send(const JsonObject& data);
@@ -119,6 +120,13 @@ class SmartIotNode {
     }
     for (SmartIotNode* iNode : SmartIotNode::nodes) {
       if (strcmp(id, iNode->getName()) == 0) return iNode;
+    }
+    return 0;
+  }
+
+    static SmartIotNode* find(const char* name, const char* type) {
+    for (SmartIotNode* iNode : SmartIotNode::nodes) {
+      if ((strcmp(name, iNode->getName()) == 0) && (strcmp(type, iNode->getType()) == 0)) return iNode;
     }
     return 0;
   }
