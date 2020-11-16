@@ -25,6 +25,14 @@ void SmartIotSwitch::onReadyToOperate() {
 
 void SmartIotSwitch::loop() {}
 
+bool SmartIotSwitch::loadNodeConfig(ArduinoJson::JsonObject& data){
+    SmartIotNode::loadNodeConfig(data);
+    if (data.containsKey("pin") ) {
+        SmartIotSwitch::setPin(data["pin"].as<uint8_t>());
+    }
+    return true;
+}
+
 void SmartIotSwitch::setPin(uint8_t pin, bool defaultstate){
     _pin = pin;
     pinMode(pin, OUTPUT);

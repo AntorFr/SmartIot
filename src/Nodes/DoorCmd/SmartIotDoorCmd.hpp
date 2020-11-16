@@ -22,6 +22,7 @@ class SmartIotDoorCmd : public SmartIotNode  {
     void setup();
     void loop();
     void onReadyToOperate();
+    bool loadNodeConfig(ArduinoJson::JsonObject& data);
 
     private:
     uint8_t _pinOpen;

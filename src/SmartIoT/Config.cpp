@@ -144,16 +144,13 @@ bool Config::load() {
       }
     }
   }
-  /* Parse settings */
+  /* Parse node settings */
   if (SmartIotNode::nodes.size()>0 && parsedJson.containsKey("nodes")) {
     JsonObject nodesObject = parsedJson["nodes"].as<JsonObject>();
     for (SmartIotNode* iNode : SmartIotNode::nodes) {
       if (nodesObject.containsKey(iNode->getId())){
         JsonObject nodeSetting = nodesObject[iNode->getId()];
-        if (nodeSetting.containsKey("node_name")) {
-          iNode->setName(strdup(nodeSetting["node_name"].as<const char*>()));
-          // Interface::get().getLogger() << F(" > Node id ") << iNode->getId() << F(" name changed to ") << nodeSetting["node_name"].c_str() << endl;
-        }
+        iNode->loadNodeConfig(nodeSetting);
       }
     }
   }

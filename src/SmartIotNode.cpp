@@ -93,6 +93,13 @@ uint16_t SmartIotNode::send(const String& value) {
   return packetId;
 }
 
+bool SmartIotNode::loadNodeConfig(ArduinoJson::JsonObject& data) {
+  if (data.containsKey("node_name")) {
+  SmartIotNode::setName(strdup(data["node_name"].as<const char*>()));
+  }
+  return true;
+}
+
 PropertyInterface& SmartIotNode::advertise(const char* id) {
   Property* propertyObject = new Property(id);
 

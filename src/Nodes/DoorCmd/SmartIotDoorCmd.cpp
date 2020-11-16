@@ -7,6 +7,8 @@ SmartIotDoorCmd::SmartIotDoorCmd(const char* id, const char* name, const char* t
     :SmartIotNode(id,name,type,inputHandler)
     ,_pinOpen(0)
     ,_pinClose(0)
+    ,_openDuration(30000)
+    ,_closeDuration(30000)
     ,_switchOpen("switch1","Open")
     ,_switchClose("switch2","Close") {
     setHandler([=](const String& json){
@@ -27,7 +29,6 @@ void SmartIotDoorCmd::setup() {
     _switchOpen.setPin(_pinOpen,_defaultPinState);
     _switchClose.setPin(_pinClose,_defaultPinState);
 
-
 }
 
 void SmartIotDoorCmd::onReadyToOperate() {
@@ -37,6 +38,17 @@ void SmartIotDoorCmd::onReadyToOperate() {
 }
 
 void SmartIotDoorCmd::loop() {}
+
+bool SmartIotDoorCmd::loadNodeConfig(ArduinoJson::JsonObject& data){
+    SmartIotNode::loadNodeConfig(data);
+    if (data.containsKey("pin_open") && data.containsKey("pin_close")) {
+        SmartIotDoorCmd::setPins(data["pin_open"].as<uint8_t>(),data["pin_close"].as<uint8_t>());
+    }
+    if (data.containsKey("open_duration") && data.containsKey("close_duration")) {
+        SmartIotDoorCmd::setDuration(data["open_duration"].as<uint16_t>(),data["close_duration"].as<uint16_t>());
+    }
+    return true;
+}
 
 void SmartIotDoorCmd::setPins(uint8_t openPin,uint8_t closePin, bool defaultstate){
     _pinOpen = openPin;
