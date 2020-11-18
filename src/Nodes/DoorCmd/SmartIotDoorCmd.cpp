@@ -10,7 +10,10 @@ SmartIotDoorCmd::SmartIotDoorCmd(const char* id, const char* name, const char* t
     ,_openDuration(30000)
     ,_closeDuration(30000)
     ,_switchOpen("switch1","Open")
-    ,_switchClose("switch2","Close") {
+    ,_switchClose("switch2","Close")
+    ,_status(0)
+    ,_value(0),
+    _lastMove(0) {
     setHandler([=](const String& json){
         return this->SmartIotDoorCmd::doorCmdHandler(json);
         });
@@ -73,10 +76,14 @@ bool SmartIotDoorCmd::doorCmdHandler(const String& json){
 
         if(data["action"].as<String>()== "open"){SmartIotDoorCmd::open();}
         if(data["action"].as<String>()== "close"){SmartIotDoorCmd::close();}
-        if(data["action"].as<String>()== "stop"){SmartIotDoorCmd::stop();}
+        if(data["action"].as<String>()== "stop"){SmartIotDoorCmd::stopMotion();}
 
         return true;
-    }   
+    }
+    if(data.containsKey("value")){
+        _value = data["value"].as<uint8_t>();
+    } 
+
     return false;  
 
 }
@@ -85,9 +92,21 @@ bool SmartIotDoorCmd::open(){
     bool _return = false;
     switch(_status) {
         case 0: // stop
-            _switchOpen.impulse(300);
-            _startMove(1);
-            _return = true;
+            if (_value == 0 || (_pinOpen != _pinClose)){  // closed
+                _switchOpen.impulse(300);
+                _startMove(1);
+                _return = true;
+            } else if (_value == 100 ){  //allready open, do nothing
+                _return = false;
+            } else { // open in the midle
+                if (_lastMove == 2) {
+                  _switchOpen.impulse(300);
+                } else {
+                  _switchOpen.doubleImpulse(300,1000);
+                }
+                _startMove(2);
+                _return = true;   
+            }
             break;
         case 1: // oppenning
             // allready oppenning
@@ -95,9 +114,10 @@ bool SmartIotDoorCmd::open(){
             break;
         case 2: // closing
             if (_pinOpen == _pinClose){
-                _switchOpen.doubleImpulse(300,500);
+                _switchOpen.doubleImpulse(300,1000);
             } else {
-                _switchOpen.impulse(300);
+                //_switchOpen.impulse(300);
+                _switchOpen.doubleImpulse(300,1000);
             }
             _startMove(1);
             _return = true;
@@ -114,15 +134,28 @@ bool SmartIotDoorCmd::close(){
     bool _return = false;
     switch(_status) {
         case 0: // stop
-            _switchClose.impulse(300);
-            _startMove(2);
-            _return = true;
+            if (_value == 100 || (_pinOpen != _pinClose)){ // open
+                _switchClose.impulse(300);
+                _startMove(2);
+                _return = true;
+            } else if (_value == 0 ){  //allready closed, do nothing
+                _return = false;
+            } else { // open in the midle
+                if (_lastMove == 1) {
+                  _switchClose.impulse(300);
+                } else {
+                  _switchClose.doubleImpulse(300,1000);
+                }
+                _startMove(2);
+                _return = true;   
+            }
             break;
         case 1: // oppenning
             if (_pinOpen == _pinClose){
-                _switchClose.doubleImpulse(300,500);
+                _switchClose.doubleImpulse(300,1000);
             } else {
-                _switchClose.impulse(300);
+                //_switchClose.impulse(300);
+                _switchClose.doubleImpulse(300,1000);
             }
             _startMove(2);
             _return = true;
@@ -141,11 +174,11 @@ bool SmartIotDoorCmd::close(){
 bool SmartIotDoorCmd::stopMotion(){
     switch(_status) {
         case 1: // oppenning
-            _switchOpen.impulse(500);
+            _switchOpen.impulse(300);
             _startMove(0);
             return 1;
         case 2: // closing
-            _switchClose.impulse(500);
+            _switchClose.impulse(300);
             _startMove(0);
             return 1;
         case 0: // stop
@@ -168,18 +201,42 @@ void SmartIotDoorCmd::_startMove(uint8_t move){
             _ticker.once_ms(_closeDuration,+[](SmartIotDoorCmd* Door) { Door->_endMove();}, this);
             break;  
         case 0:
+            _lastMove = _status; // 1 oppenning - 2 closing
             _status = 0;
             _ticker.detach();
-            break;
+            _endMove();
+            return;
 
         default:
             //wrong move
             return;          
     } 
+    _publishStat();
 }
  
 void SmartIotDoorCmd::_endMove(){
-    
+    switch(_status) {
+        case 1: _value = 100; break; //open
+        case 2: _value = 0; break; // close
+        case 0: _value = 50; break; //somewhere in the midle 
+    }
+    _status = 0;
+    _publishStat();
+
+}
+
+void SmartIotDoorCmd::_publishStat(){
+    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(3)); 
+    JsonObject data = jsonBuffer.to<JsonObject>();
+
+    switch(_status) {
+        case 0: data["status"]= F("stopped"); break;
+        case 1: data["status"]= F("openning"); break;
+        case 2: data["status"]= F("closing"); break;
+        
+    }
+    data["value"]= _value;
+    send(data);
 }
 
 

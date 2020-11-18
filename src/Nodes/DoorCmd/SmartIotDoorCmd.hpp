@@ -30,11 +30,13 @@ class SmartIotDoorCmd : public SmartIotNode  {
     uint16_t _openDuration;
     uint16_t _closeDuration;
     uint8_t _status; // 0:stop 1:openning 2:clossing
-    uint8_t _value;
+    uint8_t _value; // 100:open 0:closed
+    uint8_t _lastMove;
     bool _defaultPinState;
 
     void _startMove(uint8_t move);
     void _endMove();
+    void _publishStat();
 
     Ticker _ticker;
 
