@@ -31,6 +31,8 @@ class PropertyInterface {
   PropertyInterface& setDatatype(const char* datatype);
   PropertyInterface& setFormat(const char* format);
   PropertyInterface& setRetained(const bool retained = true);
+  PropertyInterface&  overwriteSetter(const bool overwrite = true);
+  uint16_t send(const String& value);
 
  private:
   PropertyInterface& setProperty(Property* property);
@@ -43,14 +45,16 @@ class Property {
   friend BootNormal;
 
  public:
-  explicit Property(const char* id) {
-    _id = strdup(id); _name = ""; _unit = ""; _datatype = ""; _format = ""; _retained = true; _settable = false; }
+  explicit Property(const char* id, const SmartIotNode& node) {
+    _id = strdup(id); _name = ""; _unit = ""; _datatype = ""; _format = ""; _retained = true; _settable = false; _node= &node; _overwriteSetter=false; }
   void settable(const PropertyInputHandler& inputHandler) { _settable = true;  _inputHandler = inputHandler; }
   void setName(const char* name) { _name = name; }
   void setUnit(const char* unit) { _unit = unit; }
   void setDatatype(const char* datatype) { _datatype = datatype; }
   void setFormat(const char* format) { _format = format; }
   void setRetained(const bool retained = true) { _retained = retained; }
+  void overwriteSetter(const bool  overwrite = true) { _overwriteSetter = overwrite;}
+  uint16_t send(const String& value);
 
 
  private:
@@ -69,6 +73,8 @@ class Property {
   const char* _format;
   bool _retained;
   bool _settable;
+  bool _overwriteSetter;
+  const SmartIotNode* _node;
   PropertyInputHandler _inputHandler;
 };
 }  // namespace SmartIotInternals

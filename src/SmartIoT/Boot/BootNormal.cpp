@@ -238,6 +238,17 @@ char* BootNormal::_nodeMqttTopic(SmartIotNode* node,bool set) {
   return _mqttTopic.get();
 }
 
+char* BootNormal::_nodePropertyMqttTopic(SmartIotNode* node,Property* property,bool set) {
+  _prefixMqttTopic();
+  strcat(_mqttTopic.get(), node->getType());
+  strcat_P(_mqttTopic.get(), PSTR("/"));
+  strcat(_mqttTopic.get(), node->getName());
+  strcat_P(_mqttTopic.get(), PSTR("/"));
+  strcat(_mqttTopic.get(), property->getName());
+  if (set) strcat_P(_mqttTopic.get(), PSTR("/set"));
+  return _mqttTopic.get();
+}
+
 char* BootNormal::_firmwareMqttTopic(PGM_P topic) {
   _prefixMqttTopic();
   strcat_P(_mqttTopic.get(), topic);
@@ -593,6 +604,13 @@ bool BootNormal::_subscribe(){
             Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
             if (packetId == 0) return false;
           }
+          for (Property* iProperty : node->getProperties()) {
+            if (iProperty->isSettable()) {
+              packetId = Interface::get().getMqttClient().subscribe(_nodePropertyMqttTopic(node,iProperty,true), 1);
+              Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
+              if (packetId == 0) return false; 
+            }
+          }
         }
       } 
       _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::PUB_READY;
@@ -696,8 +714,8 @@ void BootNormal::_onMqttMessage(char* topic, char* payload, AsyncMqttClientMessa
     return;
 
   // 7. here, we're sure we have a node property
-  //if (__handleNodeProperty(_mqttTopicCopy.get(), payload, properties, len, index, total))
-  //  return;
+  if (__handleNodeProperty(_mqttTopicCopy.get(), payload, properties, len, index, total))
+   return;
 }
 
 void BootNormal::_onMqttPublish(uint16_t id) {
@@ -1079,13 +1097,17 @@ bool SmartIotInternals::BootNormal::__handleNodeProperty(char * topic, char * pa
   range.isRange = false;
   range.index = 0;
 
-  char* node = _mqttTopicLevels.get()[1];
   char* property = _mqttTopicLevels.get()[2];
+  char* node_name = _mqttTopicLevels.get()[1];
+  char* node_type = _mqttTopicLevels.get()[0];
+
+  //char* node = _mqttTopicLevels.get()[1];
 
   #ifdef DEBUG
     Interface::get().getLogger() << F("Recived network message for ") << SmartIoTNode->getId() << endl;
   #endif // DEBUG
 
+  /*
   int16_t rangeSeparator = -1;
   for (uint16_t i = 0; i < strlen(node); i++) {
     if (node[i] == '_') {
@@ -1106,25 +1128,26 @@ bool SmartIotInternals::BootNormal::__handleNodeProperty(char * topic, char * pa
     }
     range.index = rangeIndexTest.toInt();
   }
+  */
 
   SmartIotNode* SmartIoTNode = nullptr;
-  SmartIoTNode = SmartIotNode::find(node);
+  SmartIoTNode = SmartIotNode::find(node_name,node_type);
 
   if (!SmartIoTNode) {
-    Interface::get().getLogger() << F("Node ") << node << F(" not registered") << endl;
+    Interface::get().getLogger() << F("Node ") << node_type << F("/") << node_name << F(" not registered") << endl;
     return true;
   }
 
   Property* propertyObject = nullptr;
   for (Property* iProperty : SmartIoTNode->getProperties()) {
-    if (strcmp(property, iProperty->getId()) == 0) {
+    if (strcmp(property, iProperty->getName()) == 0) {
       propertyObject = iProperty;
       break;
     }
   }
 
   if (!propertyObject || !propertyObject->isSettable()) {
-    Interface::get().getLogger() << F("Node ") << node << F(": ") << property << F(" property not settable") << endl;
+    Interface::get().getLogger() << F("Node ") << node_type << F("/") << node_name << F(": ") << property << F(" property not settable") << endl;
     return true;
   }
 
@@ -1137,8 +1160,8 @@ bool SmartIotInternals::BootNormal::__handleNodeProperty(char * topic, char * pa
   #ifdef DEBUG
     Interface::get().getLogger() << F("Calling node input handler...") << endl;
   #endif // DEBUG
-  handled = SmartIoTNode->handleInput(String(_mqttPayloadBuffer.get()));
-  if (handled) return true;
+  //handled = SmartIoTNode->handleInput(String(_mqttPayloadBuffer.get()));
+  //if (handled) return true;
 
   #ifdef DEBUG
     Interface::get().getLogger() << F("Calling property input handler...") << endl;
@@ -1147,7 +1170,7 @@ bool SmartIotInternals::BootNormal::__handleNodeProperty(char * topic, char * pa
 
   if (!handled) {
     Interface::get().getLogger() << F("No handlers handled the following packet:") << endl;
-    Interface::get().getLogger() << F("  • Node ID: ") << node << endl;
+    Interface::get().getLogger() << F("  • Node ID: ") << node_type << F("/") << node_name << endl;
     Interface::get().getLogger() << F("  • Is range? ");
     if (range.isRange) {
       Interface::get().getLogger() << F("yes (") << range.index << F(")") << endl;
@@ -1162,6 +1185,12 @@ bool SmartIotInternals::BootNormal::__handleNodeProperty(char * topic, char * pa
 }
 
 bool SmartIotInternals::BootNormal::__handleNode(char * topic, char * payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total) {
+
+  if (
+    _mqttTopicLevelsCount >= 3
+    && strcmp_P(_mqttTopicLevels.get()[2], PSTR("set")) != 0
+  ) { return false; } // too much level to be node .. it's a node property
+
   char* node_name = _mqttTopicLevels.get()[1];
   char* node_type = _mqttTopicLevels.get()[0];
 

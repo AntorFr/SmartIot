@@ -5,6 +5,12 @@
 #include <SmartIot.h>
 #include <Nodes/SmartIotSwitch.h>
 
+/*
+TODO:
+- Persiste curent "value" over reboot / shutdown
+- Compute midle state value more accuratly based on time
+*/
+
 
 class SmartIotDoorCmd : public SmartIotNode  {
     public:
@@ -13,16 +19,17 @@ class SmartIotDoorCmd : public SmartIotNode  {
     void setPins(uint8_t openPin,uint8_t closePin, bool defaultstate= 0);
     void setDuration(uint16_t openDuration,uint16_t closeDuration) {_openDuration = openDuration; _closeDuration = closeDuration;};
     bool doorCmdHandler(const String& json);
+    bool doorCmdHandler(const SmartIotRange& range, const String& value);
     bool open();
     bool close();
     bool stopMotion();
     bool setValue(uint8_t value);
 
     protected:
-    void setup();
-    void loop();
-    void onReadyToOperate();
-    bool loadNodeConfig(ArduinoJson::JsonObject& data);
+    virtual void setup() override;
+    virtual void loop() override;
+    virtual void onReadyToOperate() override;
+    virtual bool loadNodeConfig(ArduinoJson::JsonObject& data) override;
 
     private:
     uint8_t _pinOpen;
@@ -36,7 +43,7 @@ class SmartIotDoorCmd : public SmartIotNode  {
 
     void _startMove(uint8_t move);
     void _endMove();
-    void _publishStat();
+    void _publishStatus();
 
     Ticker _ticker;
 

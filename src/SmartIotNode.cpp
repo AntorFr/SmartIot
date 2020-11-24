@@ -44,6 +44,43 @@ PropertyInterface& PropertyInterface::setProperty(Property* property) {
   return *this;
 }
 
+PropertyInterface&  PropertyInterface::overwriteSetter(const bool overwrite){
+    _property->overwriteSetter(overwrite);
+  return *this;
+}
+
+uint16_t PropertyInterface::send(const String& value) {
+  return _property->send(value);
+}
+
+uint16_t Property::send(const String& value) {
+  if (!Interface::get().ready) {
+    Interface::get().getLogger() << F("✖ send(): impossible now") << endl;
+    return 0;
+  }
+
+  char* topic = new char[strlen(Interface::get().getConfig().get().mqtt.baseTopic) + strlen(_node->getName()) + 1 + strlen(_node->getType()) + 1 + strlen(getName())]; 
+  
+  strcpy(topic, Interface::get().getConfig().get().mqtt.baseTopic);
+  strcat(topic, _node->getType());
+  strcat_P(topic, PSTR("/"));
+  strcat(topic, _node->getName());
+  strcat_P(topic, PSTR("/"));
+  strcat(topic, getName());
+
+  uint16_t packetId = Interface::get().getMqttClient().publish(topic, 1, _retained, value.c_str());
+
+  if (_overwriteSetter) {
+    strcat_P(topic, PSTR("/set"));
+    Interface::get().getMqttClient().publish(topic, 1, true, value.c_str());
+  }
+
+  delete[] topic;
+
+  return packetId;
+}
+
+
 SmartIotNode::SmartIotNode(const char* id, const char* name, const char* type, const NodeInputHandler& inputHandler)
 : _id(id)
 , _name(name)
@@ -94,6 +131,7 @@ uint16_t SmartIotNode::send(const String& value) {
 }
 
 bool SmartIotNode::loadNodeConfig(ArduinoJson::JsonObject& data) {
+  Interface::get().getLogger() << F("> Load node config: ") << _id << endl;
   if (data.containsKey("node_name")) {
   SmartIotNode::setName(strdup(data["node_name"].as<const char*>()));
   }
@@ -101,7 +139,7 @@ bool SmartIotNode::loadNodeConfig(ArduinoJson::JsonObject& data) {
 }
 
 PropertyInterface& SmartIotNode::advertise(const char* id) {
-  Property* propertyObject = new Property(id);
+  Property* propertyObject = new Property(id, *this);
 
   _properties.push_back(propertyObject);
 
@@ -111,9 +149,9 @@ PropertyInterface& SmartIotNode::advertise(const char* id) {
 SendingPromise& SmartIotNode::setProperty(const String& property) const {
   Property* iProperty = this->getProperty(property);
   if (iProperty &&  iProperty->isRetained()) {
-      return Interface::get().getSendingPromise().setNode(*this).setProperty(property).setQos(1).setRetained(true);
+      return Interface::get().getSendingPromise().setNode(*this).setProperty(iProperty->getName()).setQos(1).setRetained(true);
   } else {
-      return Interface::get().getSendingPromise().setNode(*this).setProperty(property).setQos(1);
+      return Interface::get().getSendingPromise().setNode(*this).setProperty(iProperty->getName()).setQos(1);
   }
 }
 

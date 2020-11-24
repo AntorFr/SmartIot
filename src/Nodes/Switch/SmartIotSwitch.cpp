@@ -28,7 +28,7 @@ void SmartIotSwitch::loop() {}
 bool SmartIotSwitch::loadNodeConfig(ArduinoJson::JsonObject& data){
     SmartIotNode::loadNodeConfig(data);
     if (data.containsKey("pin") ) {
-        SmartIotSwitch::setPin(data["pin"].as<uint8_t>());
+        setPin(data["pin"].as<uint8_t>());
     }
     return true;
 }
@@ -90,7 +90,7 @@ bool SmartIotSwitch::SwitchHandler(const String& json){
     if(data.containsKey("value")){ 
         if(data["value"].is<int>()){
             #ifdef DEBUG
-                Interface::get().getLogger() << F("Switch node, handle value: ") << data["value"] << endl;
+                Interface::get().getLogger() << F("Switch node, handle value: ") << data["value"].as<int>() << endl;
             #endif // DEBUG
 
             if(data["value"]== 100) {SmartIotSwitch::turnOn();}

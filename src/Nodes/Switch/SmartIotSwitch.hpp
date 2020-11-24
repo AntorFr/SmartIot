@@ -18,10 +18,10 @@ class SmartIotSwitch : public SmartIotNode  {
     bool SwitchHandler(const String& json);
 
     protected:
-    void setup();
-    void loop();
-    void onReadyToOperate();
-    bool loadNodeConfig(ArduinoJson::JsonObject& data);
+    virtual void setup() override;
+    virtual void loop() override;
+    virtual void onReadyToOperate() override;
+    virtual bool loadNodeConfig(ArduinoJson::JsonObject& data) override;
 
     private:
     uint8_t _pin;

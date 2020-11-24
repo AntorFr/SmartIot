@@ -32,6 +32,10 @@ void SmartIotDoorCmd::setup() {
     _switchOpen.setPin(_pinOpen,_defaultPinState);
     _switchClose.setPin(_pinClose,_defaultPinState);
 
+    advertise("CurrentState").setName("currentstate").setRetained(true).setDatatype("string");
+    advertise("TargetState").setName("targetstate").setRetained(false).setDatatype("string").settable([=](const SmartIotRange& range, const String& value){
+        return this->SmartIotDoorCmd::doorCmdHandler(range,value);
+        });
 }
 
 void SmartIotDoorCmd::onReadyToOperate() {
@@ -59,6 +63,17 @@ void SmartIotDoorCmd::setPins(uint8_t openPin,uint8_t closePin, bool defaultstat
     _defaultPinState = defaultstate;
 }
 
+bool SmartIotDoorCmd::doorCmdHandler(const SmartIotRange& range, const String& value){
+    #ifdef DEBUG
+        Interface::get().getLogger() << F("DoorCmd node, handle action: ") << value << endl;
+    #endif // DEBUG
+    if (value == "open") { open();}
+    else if (value == "close") {close();}
+    else if (value == "stop") {stopMotion();}
+    else { return false; }
+    return true;
+}
+
 bool SmartIotDoorCmd::doorCmdHandler(const String& json){
     DynamicJsonDocument parseJsonBuff (5+ JSON_OBJECT_SIZE(2)); 
     DeserializationError error = deserializeJson(parseJsonBuff, json);
@@ -74,9 +89,9 @@ bool SmartIotDoorCmd::doorCmdHandler(const String& json){
             Interface::get().getLogger() << F("DoorCmd node, handle action: ") << data["action"].as<const char*>() << endl;
         #endif // DEBUG
 
-        if(data["action"].as<String>()== "open"){SmartIotDoorCmd::open();}
-        if(data["action"].as<String>()== "close"){SmartIotDoorCmd::close();}
-        if(data["action"].as<String>()== "stop"){SmartIotDoorCmd::stopMotion();}
+        if(data["action"].as<String>()== "open"){open();}
+        if(data["action"].as<String>()== "close"){close();}
+        if(data["action"].as<String>()== "stop"){stopMotion();}
 
         return true;
     }
@@ -89,20 +104,23 @@ bool SmartIotDoorCmd::doorCmdHandler(const String& json){
 }
 
 bool SmartIotDoorCmd::open(){
+    #ifdef DEBUG
+        Interface::get().getLogger() << F("DoorCmd node, commande open()") << endl;
+    #endif // DEBUG
     bool _return = false;
     switch(_status) {
         case 0: // stop
             if (_value == 0 || (_pinOpen != _pinClose)){  // closed
-                _switchOpen.impulse(300);
+                _switchOpen.impulse(500);
                 _startMove(1);
                 _return = true;
             } else if (_value == 100 ){  //allready open, do nothing
                 _return = false;
             } else { // open in the midle
                 if (_lastMove == 2) {
-                  _switchOpen.impulse(300);
+                  _switchOpen.impulse(500);
                 } else {
-                  _switchOpen.doubleImpulse(300,1000);
+                  _switchOpen.doubleImpulse(500,1000);
                 }
                 _startMove(2);
                 _return = true;   
@@ -114,10 +132,10 @@ bool SmartIotDoorCmd::open(){
             break;
         case 2: // closing
             if (_pinOpen == _pinClose){
-                _switchOpen.doubleImpulse(300,1000);
+                _switchOpen.doubleImpulse(500,1000);
             } else {
                 //_switchOpen.impulse(300);
-                _switchOpen.doubleImpulse(300,1000);
+                _switchOpen.doubleImpulse(500,1000);
             }
             _startMove(1);
             _return = true;
@@ -131,20 +149,23 @@ bool SmartIotDoorCmd::open(){
 
 
 bool SmartIotDoorCmd::close(){
+    #ifdef DEBUG
+        Interface::get().getLogger() << F("DoorCmd node, commande close()") << endl;
+    #endif // DEBUG
     bool _return = false;
     switch(_status) {
         case 0: // stop
             if (_value == 100 || (_pinOpen != _pinClose)){ // open
-                _switchClose.impulse(300);
+                _switchClose.impulse(500);
                 _startMove(2);
                 _return = true;
             } else if (_value == 0 ){  //allready closed, do nothing
                 _return = false;
             } else { // open in the midle
                 if (_lastMove == 1) {
-                  _switchClose.impulse(300);
+                  _switchClose.impulse(500);
                 } else {
-                  _switchClose.doubleImpulse(300,1000);
+                  _switchClose.doubleImpulse(500,1000);
                 }
                 _startMove(2);
                 _return = true;   
@@ -152,10 +173,10 @@ bool SmartIotDoorCmd::close(){
             break;
         case 1: // oppenning
             if (_pinOpen == _pinClose){
-                _switchClose.doubleImpulse(300,1000);
+                _switchClose.doubleImpulse(500,1000);
             } else {
                 //_switchClose.impulse(300);
-                _switchClose.doubleImpulse(300,1000);
+                _switchClose.doubleImpulse(500,1000);
             }
             _startMove(2);
             _return = true;
@@ -172,13 +193,16 @@ bool SmartIotDoorCmd::close(){
 }
 
 bool SmartIotDoorCmd::stopMotion(){
+    #ifdef DEBUG
+        Interface::get().getLogger() << F("DoorCmd node, commande stopMotion()") << endl;
+    #endif // DEBUG
     switch(_status) {
         case 1: // oppenning
-            _switchOpen.impulse(300);
+            _switchOpen.impulse(500);
             _startMove(0);
             return 1;
         case 2: // closing
-            _switchClose.impulse(300);
+            _switchClose.impulse(500);
             _startMove(0);
             return 1;
         case 0: // stop
@@ -211,7 +235,7 @@ void SmartIotDoorCmd::_startMove(uint8_t move){
             //wrong move
             return;          
     } 
-    _publishStat();
+    _publishStatus();
 }
  
 void SmartIotDoorCmd::_endMove(){
@@ -221,22 +245,47 @@ void SmartIotDoorCmd::_endMove(){
         case 0: _value = 50; break; //somewhere in the midle 
     }
     _status = 0;
-    _publishStat();
+    _publishStatus();
 
 }
 
-void SmartIotDoorCmd::_publishStat(){
-    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(3)); 
+void SmartIotDoorCmd::_publishStatus(){
+    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(5)); 
     JsonObject data = jsonBuffer.to<JsonObject>();
 
     switch(_status) {
-        case 0: data["status"]= F("stopped"); break;
-        case 1: data["status"]= F("openning"); break;
-        case 2: data["status"]= F("closing"); break;
+        case 0:
+            data["status"]= F("stopped");
+            if (_value==0) {
+                getProperty("CurrentState")->send("closed");
+                data["state"] = F("close");
+            } else if (_value==100) {
+                data["state"] = F("open");
+                getProperty("CurrentState")->send("open");
+            }
+            else {
+                data["state"] = F("stopped");
+                getProperty("CurrentState")->send("stopped");
+            }
+            break;
+        case 1: 
+            data["status"]= F("openning");
+            data["state"] = F("openning");
+            getProperty("CurrentState")->send("openning");
+            getProperty("TargetState")->send("open");
+            break;
+        case 2: 
+            data["status"]= F("closing"); 
+            data["state"] = F("closing");
+            getProperty("CurrentState")->send("closing");
+            getProperty("TargetState")->send("close");
+            break;
         
     }
     data["value"]= _value;
+
     send(data);
+
 }
 
 
