@@ -17,7 +17,8 @@ class SmartIotDoorCmd : public SmartIotNode  {
     SmartIotDoorCmd(const char* id, const char* name, const char* type = "switch", const SmartIotInternals::NodeInputHandler& nodeInputHandler = [](const String& value) { return false; });
     ~SmartIotDoorCmd();
     void setPins(uint8_t openPin,uint8_t closePin, bool defaultstate= 0);
-    void setDuration(uint16_t openDuration,uint16_t closeDuration) {_openDuration = openDuration; _closeDuration = closeDuration;};
+    void setupLight(uint8_t pin, uint32_t duration) {_pinLight = pin; _lightDuration= duration;}
+    void setDuration(uint32_t openDuration,uint32_t closeDuration) {_openDuration = openDuration; _closeDuration = closeDuration;};
     bool doorCmdHandler(const String& json);
     bool doorCmdHandler(const SmartIotRange& range, const String& value);
     bool open();
@@ -34,8 +35,11 @@ class SmartIotDoorCmd : public SmartIotNode  {
     private:
     uint8_t _pinOpen;
     uint8_t _pinClose;
-    uint16_t _openDuration;
-    uint16_t _closeDuration;
+    uint8_t _pinLight;
+    
+    uint32_t _openDuration;
+    uint32_t _closeDuration;
+    uint32_t _lightDuration;
     uint8_t _status; // 0:stop 1:openning 2:clossing
     uint8_t _value; // 100:open 0:closed
     uint8_t _lastMove;
@@ -49,5 +53,6 @@ class SmartIotDoorCmd : public SmartIotNode  {
 
     SmartIotSwitch _switchOpen;
     SmartIotSwitch _switchClose;
+    SmartIotSwitch _switchlight;
 
 };

@@ -7,19 +7,18 @@ SmartIotDoorCmd::SmartIotDoorCmd(const char* id, const char* name, const char* t
     :SmartIotNode(id,name,type,inputHandler)
     ,_pinOpen(0)
     ,_pinClose(0)
+    ,_pinLight(0)
     ,_openDuration(30000)
     ,_closeDuration(30000)
     ,_switchOpen("switch1","Open")
     ,_switchClose("switch2","Close")
+    ,_switchlight("light","light switch","light")
     ,_status(0)
     ,_value(0),
     _lastMove(0) {
     setHandler([=](const String& json){
         return this->SmartIotDoorCmd::doorCmdHandler(json);
         });
-
-    _switchOpen.notSettable();
-    _switchClose.notSettable();
     
 }
 
@@ -29,8 +28,18 @@ SmartIotDoorCmd::~SmartIotDoorCmd() {
 void SmartIotDoorCmd::setup() {
     Interface::get().getLogger() << F("• Setup Door Command node ") << getName() << endl;
 
+    _switchOpen.notSettable();
+    _switchClose.notSettable();
+
     _switchOpen.setPin(_pinOpen,_defaultPinState);
     _switchClose.setPin(_pinClose,_defaultPinState);
+
+    if(_pinLight!=0){
+        _switchlight.setName(this->getName());
+        _switchlight.setPin(_pinLight,false);
+    } else {
+        _switchlight.notSettable();
+    }
 
     advertise("CurrentState").setName("currentstate").setRetained(true).setDatatype("string");
     advertise("TargetState").setName("targetstate").setRetained(false).setDatatype("string").settable([=](const SmartIotRange& range, const String& value){
@@ -49,10 +58,13 @@ void SmartIotDoorCmd::loop() {}
 bool SmartIotDoorCmd::loadNodeConfig(ArduinoJson::JsonObject& data){
     SmartIotNode::loadNodeConfig(data);
     if (data.containsKey("pin_open") && data.containsKey("pin_close")) {
-        SmartIotDoorCmd::setPins(data["pin_open"].as<uint8_t>(),data["pin_close"].as<uint8_t>());
+        setPins(data["pin_open"].as<uint8_t>(),data["pin_close"].as<uint8_t>());
     }
     if (data.containsKey("open_duration") && data.containsKey("close_duration")) {
-        SmartIotDoorCmd::setDuration(data["open_duration"].as<uint16_t>(),data["close_duration"].as<uint16_t>());
+        setDuration(data["open_duration"].as<uint32_t>(),data["close_duration"].as<uint32_t>());
+    }
+    if (data.containsKey("pin_light") && data.containsKey("light_duration")) {
+       setupLight(data["pin_light"].as<uint32_t>(),data["light_duration"].as<uint32_t>());
     }
     return true;
 }
@@ -236,6 +248,9 @@ void SmartIotDoorCmd::_startMove(uint8_t move){
             return;          
     } 
     _publishStatus();
+    if(_pinLight!=0){
+        _switchlight.impulse((_lightDuration*1000));
+    }
 }
  
 void SmartIotDoorCmd::_endMove(){

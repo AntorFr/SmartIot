@@ -40,7 +40,7 @@ void SmartIotSwitch::setPin(uint8_t pin, bool defaultstate){
     _state = defaultstate;
 }
 
-void SmartIotSwitch::impulse(uint16_t waveMs) {  
+void SmartIotSwitch::impulse(uint32_t waveMs) {  
     if (!_debounceFlag) {
         _debounceFlag = true;
         _turn(!_state,false);
@@ -48,7 +48,7 @@ void SmartIotSwitch::impulse(uint16_t waveMs) {
     }
 }
 
-void SmartIotSwitch::doubleImpulse(uint16_t waveMs,uint16_t waitMs){  
+void SmartIotSwitch::doubleImpulse(uint32_t waveMs,uint32_t waitMs){  
     if (!_debounceFlag) {
         _debounceFlag = true;
         _turn(!_state,false);
