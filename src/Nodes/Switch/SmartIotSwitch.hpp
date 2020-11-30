@@ -4,6 +4,7 @@
 #include <Ticker.h>
 #include <SmartIot.h>
 
+
 class SmartIotSwitch : public SmartIotNode  {
     public:
     SmartIotSwitch(const char* id, const char* name, const char* type = "switch", const SmartIotInternals::NodeInputHandler& nodeInputHandler = [](const String& value) { return false; });

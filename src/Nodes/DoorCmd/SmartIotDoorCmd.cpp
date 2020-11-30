@@ -13,6 +13,9 @@ SmartIotDoorCmd::SmartIotDoorCmd(const char* id, const char* name, const char* t
     ,_switchOpen("switch1","Open")
     ,_switchClose("switch2","Close")
     ,_switchlight("light","light switch","light")
+    ,_sensorToRead(false)
+    ,_sensorActivated(true)
+    ,_sensor()
     ,_status(0)
     ,_value(0),
     _lastMove(0) {
@@ -41,6 +44,10 @@ void SmartIotDoorCmd::setup() {
         _switchlight.notSettable();
     }
 
+    if (_sensorActivated) {
+            _sensorActivated = _initSensor(); // if no sensor detected, desable feature;
+    }
+
     advertise("CurrentState").setName("currentstate").setRetained(true).setDatatype("string");
     advertise("TargetState").setName("targetstate").setRetained(false).setDatatype("string").settable([=](const SmartIotRange& range, const String& value){
         return this->SmartIotDoorCmd::doorCmdHandler(range,value);
@@ -51,9 +58,75 @@ void SmartIotDoorCmd::onReadyToOperate() {
     if(_pinOpen == 0 || _pinClose == 0 ) { Interface::get().getLogger() << F("✖ Door Command node") << getName() << F(" pins not initialized")  << endl;}
     else { Interface::get().getLogger() << F("• Ready to operate Door Command node ") << getName() << endl;}
 
+    _sensorTicker.attach(60,+[](SmartIotDoorCmd* Door) { Door->_readSensor();}, this);
+    _readSensor();
+
 }
 
-void SmartIotDoorCmd::loop() {}
+void SmartIotDoorCmd::loop() {
+    if (_sensorToRead && _sensorActivated) {
+      _statusSensor(_sensor.readRangeSingleMillimeters());
+      if (_sensor.timeoutOccurred()) { 
+          Interface::get().getLogger() << F(" ✖ Setup Door command : Sensor timeout!") << endl;
+          _initSensor(); 
+      }
+    }
+}
+
+bool SmartIotDoorCmd::_initSensor(){
+        _sensorMesures.clear();
+        Wire.begin();
+        _sensor.setTimeout(800);
+        if (!_sensor.init())
+        {
+            Interface::get().getLogger() << F(" ✖ Setup Door command : Failed to detect and initialize sensor!") << endl;
+            return false;
+        } else {
+            _sensor.setMeasurementTimingBudget(200000);
+        }
+
+        return true;
+}
+
+void SmartIotDoorCmd::_statusSensor(uint16_t mesure){
+    _sensorMesures.push_back(mesure);
+    if(_sensorMesures.size() <= 10){
+        // not enought data to compute status yet
+        return;
+    } else {
+        _sensorMesures.erase(_sensorMesures.begin(),_sensorMesures.begin()+_sensorMesures.size()-10);
+
+        auto n = _sensorMesures.size();
+        uint16_t avgMesure = std::accumulate(_sensorMesures.begin(), _sensorMesures.end(),0) / n;
+
+        #ifdef DEBUG
+            Interface::get().getLogger() << F("DoorCmd sensor avg value: ") << avgMesure << endl;
+
+            DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(6)); 
+            JsonObject data = jsonBuffer.to<JsonObject>();
+            data["avgMesure"] = avgMesure;
+            send(data);
+        #endif // DEBUG
+
+
+
+        if (avgMesure >= 200) {
+            // door close
+            _value = 0;
+            _publishStatus();
+        } else if (avgMesure < 200)  {
+            // door open
+            _value = 100;
+        }
+
+        // sensor read properly, errase buffer and stop reading
+        _sensorMesures.clear();
+        _sensorToRead = false;
+        _publishStatus();
+    }
+
+
+}
 
 bool SmartIotDoorCmd::loadNodeConfig(ArduinoJson::JsonObject& data){
     SmartIotNode::loadNodeConfig(data);
@@ -65,6 +138,9 @@ bool SmartIotDoorCmd::loadNodeConfig(ArduinoJson::JsonObject& data){
     }
     if (data.containsKey("pin_light") && data.containsKey("light_duration")) {
        setupLight(data["pin_light"].as<uint32_t>(),data["light_duration"].as<uint32_t>());
+    }
+    if(data.containsKey("sensor") && data["sensor"].is<bool>()){
+        activateSensor(data["sensor"].as<bool>());
     }
     return true;
 }
@@ -127,6 +203,7 @@ bool SmartIotDoorCmd::open(){
                 _startMove(1);
                 _return = true;
             } else if (_value == 100 ){  //allready open, do nothing
+                _endMove();
                 _return = false;
             } else { // open in the midle
                 if (_lastMove == 2) {
@@ -140,6 +217,7 @@ bool SmartIotDoorCmd::open(){
             break;
         case 1: // oppenning
             // allready oppenning
+            _endMove();
             _return = false;
             break;
         case 2: // closing
@@ -172,6 +250,7 @@ bool SmartIotDoorCmd::close(){
                 _startMove(2);
                 _return = true;
             } else if (_value == 0 ){  //allready closed, do nothing
+                _endMove();
                 _return = false;
             } else { // open in the midle
                 if (_lastMove == 1) {
@@ -195,6 +274,7 @@ bool SmartIotDoorCmd::close(){
             break;
         case 2: // closing
             // allready closing
+            _endMove();
             _return = false;
             break;
         default:
@@ -219,6 +299,7 @@ bool SmartIotDoorCmd::stopMotion(){
             return 1;
         case 0: // stop
             //Allready stoped
+            _endMove();
             return 0;
         default:
             return 0;
@@ -254,18 +335,33 @@ void SmartIotDoorCmd::_startMove(uint8_t move){
 }
  
 void SmartIotDoorCmd::_endMove(){
-    switch(_status) {
-        case 1: _value = 100; break; //open
-        case 2: _value = 0; break; // close
-        case 0: _value = 50; break; //somewhere in the midle 
+    if (_sensorActivated) { //sensor available > read position
+        if(_status==0) {
+            _value = 50; //somewhere in the midle 
+            _publishStatus();
+        } else {
+            _readSensor();
+        }
+        
+    } else { //sensor not available > deduce position
+        switch(_status) {
+            case 1: 
+                _value = 100;
+                break; //open
+            case 2: 
+                _value = 0;
+                break; // close
+            case 0:
+                _value = 50; 
+                break; //somewhere in the midle 
+        }
+        _publishStatus();
     }
     _status = 0;
-    _publishStatus();
-
 }
 
 void SmartIotDoorCmd::_publishStatus(){
-    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(5)); 
+    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(6)); 
     JsonObject data = jsonBuffer.to<JsonObject>();
 
     switch(_status) {
@@ -273,7 +369,7 @@ void SmartIotDoorCmd::_publishStatus(){
             data["status"]= F("stopped");
             if (_value==0) {
                 getProperty("CurrentState")->send("closed");
-                data["state"] = F("close");
+                data["state"] = F("closed");
             } else if (_value==100) {
                 data["state"] = F("open");
                 getProperty("CurrentState")->send("open");
@@ -298,6 +394,7 @@ void SmartIotDoorCmd::_publishStatus(){
         
     }
     data["value"]= _value;
+    data["sensor"]= _sensorActivated;
 
     send(data);
 

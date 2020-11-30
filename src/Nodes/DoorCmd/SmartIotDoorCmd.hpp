@@ -5,6 +5,12 @@
 #include <SmartIot.h>
 #include <Nodes/SmartIotSwitch.h>
 
+#include <vector>
+#include <numeric>
+
+#include <Wire.h>
+#include <VL53L0X.h>
+
 /*
 TODO:
 - Persiste curent "value" over reboot / shutdown
@@ -19,6 +25,7 @@ class SmartIotDoorCmd : public SmartIotNode  {
     void setPins(uint8_t openPin,uint8_t closePin, bool defaultstate= 0);
     void setupLight(uint8_t pin, uint32_t duration) {_pinLight = pin; _lightDuration= duration;}
     void setDuration(uint32_t openDuration,uint32_t closeDuration) {_openDuration = openDuration; _closeDuration = closeDuration;};
+    void activateSensor(bool activate = true) { _sensorActivated = activate; }
     bool doorCmdHandler(const String& json);
     bool doorCmdHandler(const SmartIotRange& range, const String& value);
     bool open();
@@ -50,6 +57,16 @@ class SmartIotDoorCmd : public SmartIotNode  {
     void _publishStatus();
 
     Ticker _ticker;
+
+    VL53L0X _sensor;
+    std::vector<uint16_t >_sensorMesures;
+    void _statusSensor(uint16_t mesure);
+    Ticker _sensorTicker;
+    bool _sensorToRead;
+    bool _sensorActivated; //sensor is activated by default but can be configure in settings
+    bool _readSensor(){ if (_status == 0 && (_value == 100 || _value == 0)) { _sensorToRead = true; }  }
+    bool _initSensor();
+    
 
     SmartIotSwitch _switchOpen;
     SmartIotSwitch _switchClose;
