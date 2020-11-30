@@ -58,8 +58,10 @@ void SmartIotDoorCmd::onReadyToOperate() {
     if(_pinOpen == 0 || _pinClose == 0 ) { Interface::get().getLogger() << F("✖ Door Command node") << getName() << F(" pins not initialized")  << endl;}
     else { Interface::get().getLogger() << F("• Ready to operate Door Command node ") << getName() << endl;}
 
-    _sensorTicker.attach(60,+[](SmartIotDoorCmd* Door) { Door->_readSensor();}, this);
-    _readSensor();
+    if(_sensorActivated){
+        _readSensor();
+        _sensorTicker.attach(60,+[](SmartIotDoorCmd* Door) { Door->_readSensor();}, this);
+    }
 
 }
 
@@ -312,10 +314,12 @@ void SmartIotDoorCmd::_startMove(uint8_t move){
         case 1: // oppenning
             _status = 1;
             _ticker.once_ms(_openDuration,+[](SmartIotDoorCmd* Door) { Door->_endMove();}, this);
+            _stopReadSensor();
             break;
         case 2: // closing
             _status = 2;
             _ticker.once_ms(_closeDuration,+[](SmartIotDoorCmd* Door) { Door->_endMove();}, this);
+            _stopReadSensor();
             break;  
         case 0:
             _lastMove = _status; // 1 oppenning - 2 closing
