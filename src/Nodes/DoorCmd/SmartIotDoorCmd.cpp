@@ -213,7 +213,7 @@ bool SmartIotDoorCmd::open(){
                 } else {
                   _switchOpen.doubleImpulse(500,1000);
                 }
-                _startMove(2);
+                _startMove(1);
                 _return = true;   
             }
             break;
@@ -344,7 +344,7 @@ void SmartIotDoorCmd::_endMove(){
             _value = 50; //somewhere in the midle 
             _publishStatus();
         } else {
-            _readSensor();
+            _readSensor(true);
         }
         
     } else { //sensor not available > deduce position

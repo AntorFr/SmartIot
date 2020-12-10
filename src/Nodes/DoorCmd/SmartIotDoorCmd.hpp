@@ -64,7 +64,7 @@ class SmartIotDoorCmd : public SmartIotNode  {
     Ticker _sensorTicker;
     bool _sensorToRead;
     bool _sensorActivated; //sensor is activated by default but can be configure in settings
-    bool _readSensor(){ if (_sensorActivated && _status == 0 && (_value == 100 || _value == 0)) { _sensorToRead = true; }  }
+    bool _readSensor(bool forced = false){ if (_sensorActivated && _status == 0 && (_value == 100 || _value == 0 || forced == true)) { _sensorToRead = true; }  }
     bool _stopReadSensor(){ if (_sensorActivated) {_sensorMesures.clear(); _sensorToRead = false; }}
     bool _initSensor();
     
