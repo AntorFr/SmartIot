@@ -115,7 +115,6 @@ void SmartIotDoorCmd::_statusSensor(uint16_t mesure){
         if (avgMesure >= 200) {
             // door close
             _value = 0;
-            _publishStatus();
         } else if (avgMesure < 200)  {
             // door open
             _value = 100;
@@ -207,11 +206,11 @@ bool SmartIotDoorCmd::open(){
             } else if (_value == 100 ){  //allready open, do nothing
                 _endMove();
                 _return = false;
-            } else { // open in the midle
+            } else { // open in the midle and OnePin mode
                 if (_lastMove == 2) {
                   _switchOpen.impulse(500);
                 } else {
-                  _switchOpen.doubleImpulse(500,1000);
+                  _switchOpen.multipleImpulse(3,500,800);
                 }
                 _startMove(1);
                 _return = true;   
@@ -223,12 +222,7 @@ bool SmartIotDoorCmd::open(){
             _return = false;
             break;
         case 2: // closing
-            if (_pinOpen == _pinClose){
-                _switchOpen.doubleImpulse(500,1000);
-            } else {
-                //_switchOpen.impulse(300);
-                _switchOpen.doubleImpulse(500,1000);
-            }
+            _switchOpen.doubleImpulse(500,1000);
             _startMove(1);
             _return = true;
             break;
@@ -254,23 +248,18 @@ bool SmartIotDoorCmd::close(){
             } else if (_value == 0 ){  //allready closed, do nothing
                 _endMove();
                 _return = false;
-            } else { // open in the midle
+            } else { // open in the midle and OnePin mode
                 if (_lastMove == 1) {
                   _switchClose.impulse(500);
                 } else {
-                  _switchClose.doubleImpulse(500,1000);
+                  _switchClose.multipleImpulse(3,500,800);
                 }
                 _startMove(2);
                 _return = true;   
             }
             break;
         case 1: // oppenning
-            if (_pinOpen == _pinClose){
-                _switchClose.doubleImpulse(500,1000);
-            } else {
-                //_switchClose.impulse(300);
-                _switchClose.doubleImpulse(500,1000);
-            }
+            _switchClose.doubleImpulse(500,1000);
             _startMove(2);
             _return = true;
             break;
@@ -313,16 +302,17 @@ void SmartIotDoorCmd::_startMove(uint8_t move){
     switch(move) {
         case 1: // oppenning
             _status = 1;
+            _lastMove = _status;
             _ticker.once_ms(_openDuration,+[](SmartIotDoorCmd* Door) { Door->_endMove();}, this);
             _stopReadSensor();
             break;
         case 2: // closing
             _status = 2;
+            _lastMove = _status;
             _ticker.once_ms(_closeDuration,+[](SmartIotDoorCmd* Door) { Door->_endMove();}, this);
             _stopReadSensor();
             break;  
-        case 0:
-            _lastMove = _status; // 1 oppenning - 2 closing
+        case 0: // stop
             _status = 0;
             _ticker.detach();
             _endMove();
@@ -344,7 +334,8 @@ void SmartIotDoorCmd::_endMove(){
             _value = 50; //somewhere in the midle 
             _publishStatus();
         } else {
-            _readSensor(true);
+            _status=0;
+            _readSensor(true); // readSensor take care of the publication
         }
         
     } else { //sensor not available > deduce position
@@ -359,9 +350,9 @@ void SmartIotDoorCmd::_endMove(){
                 _value = 50; 
                 break; //somewhere in the midle 
         }
+        _status = 0;
         _publishStatus();
     }
-    _status = 0;
 }
 
 void SmartIotDoorCmd::_publishStatus(){

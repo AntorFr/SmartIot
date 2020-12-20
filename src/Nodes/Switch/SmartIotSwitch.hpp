@@ -13,8 +13,9 @@ class SmartIotSwitch : public SmartIotNode  {
     void turnOn()   {_turn(true);}
     void turnOff()  {_turn(false);}
     void toggle();
-    void impulse(uint32_t waveMs);
+    void impulse(uint32_t waveMs); 
     void doubleImpulse(uint32_t waveMs,uint32_t waitMs);
+    void multipleImpulse(uint8_t number,uint32_t waveMs,uint32_t waitMs);
     bool SwitchHandler(const String& json);
 
     protected:
@@ -27,9 +28,12 @@ class SmartIotSwitch : public SmartIotNode  {
     uint8_t _pin;
     Ticker _ticker1;
     Ticker _ticker2;
-    uint32_t _doubleWaveMs;
+    uint32_t _waveMs;
+    uint8_t _numberImpulse;
     bool _debounceFlag;
     bool _state;
     void _turn(bool state,bool _debounce = true);
     void _unbounce(){_debounceFlag = false;}
+    void _impulse(uint32_t waveMs);
+    void _nImpulse(uint32_t waveMs); 
 };

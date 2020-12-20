@@ -6,7 +6,8 @@ using namespace SmartIotInternals;
 SmartIotSwitch::SmartIotSwitch(const char* id, const char* name, const char* type, const NodeInputHandler& inputHandler)
     :SmartIotNode(id,name,type,inputHandler)
     ,_pin(0)
-    ,_debounceFlag(false) {
+    ,_debounceFlag(false)
+    ,_numberImpulse(0) {
     setHandler([=](const String& json){
         return this->SmartIotSwitch::SwitchHandler(json);
     });
@@ -40,7 +41,13 @@ void SmartIotSwitch::setPin(uint8_t pin, bool defaultstate){
     _state = defaultstate;
 }
 
+
+
 void SmartIotSwitch::impulse(uint32_t waveMs) {  
+    _impulse(waveMs);
+}
+
+void SmartIotSwitch::_impulse(uint32_t waveMs) {  
     if (!_debounceFlag) {
         _debounceFlag = true;
         _turn(!_state,false);
@@ -48,13 +55,37 @@ void SmartIotSwitch::impulse(uint32_t waveMs) {
     }
 }
 
-void SmartIotSwitch::doubleImpulse(uint32_t waveMs,uint32_t waitMs){  
+void SmartIotSwitch::_nImpulse(uint32_t waveMs) { 
+    if (_numberImpulse > 0) {
+        _numberImpulse =- 1;
+        _impulse(waveMs);
+    } else {
+        _ticker2.detach();
+    }
+}
+
+void SmartIotSwitch::doubleImpulse(uint32_t waveMs,uint32_t waitMs){ 
+    /* 
     if (!_debounceFlag) {
         _debounceFlag = true;
         _turn(!_state,false);
-        _doubleWaveMs = waveMs;
+        _waveMs = waveMs;
         _ticker1.once_ms(waveMs,+[](SmartIotSwitch* Switch) { Switch->_turn(!(Switch->_state));}, this);
-        _ticker2.once_ms(waveMs+waitMs,+[](SmartIotSwitch* Switch) { Switch->impulse(Switch->_doubleWaveMs);}, this);
+        _ticker2.once_ms(waveMs+waitMs,+[](SmartIotSwitch* Switch) { Switch->impulse(Switch->_waveMs);}, this);
+    }
+    */
+   multipleImpulse(2,waveMs,waitMs);
+
+}
+
+void SmartIotSwitch::multipleImpulse(uint8_t number,uint32_t waveMs,uint32_t waitMs){  
+    if (number > 0) {
+        _impulse(waveMs);
+        _waveMs = waveMs;
+        _numberImpulse = number-1;
+        if (_numberImpulse>0) {
+            _ticker2.attach_ms(waveMs+waitMs,+[](SmartIotSwitch* Switch) { Switch->_nImpulse(Switch->_waveMs);}, this);
+        }
     }
 }
 
