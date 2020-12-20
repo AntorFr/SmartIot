@@ -11,6 +11,8 @@
 #include <Wire.h>
 #include <VL53L0X.h>
 
+//#define DEBUG 1
+
 /*
 TODO:
 - Persiste curent "value" over reboot / shutdown

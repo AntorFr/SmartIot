@@ -314,6 +314,7 @@ void SmartIotDoorCmd::_startMove(uint8_t move){
             break;  
         case 0: // stop
             _status = 0;
+            _value = 50;
             _ticker.detach();
             _endMove();
             return;
@@ -331,7 +332,6 @@ void SmartIotDoorCmd::_startMove(uint8_t move){
 void SmartIotDoorCmd::_endMove(){
     if (_sensorActivated) { //sensor available > read position
         if(_status==0) {
-            _value = 50; //somewhere in the midle 
             _publishStatus();
         } else {
             _status=0;
@@ -347,8 +347,7 @@ void SmartIotDoorCmd::_endMove(){
                 _value = 0;
                 break; // close
             case 0:
-                _value = 50; 
-                break; //somewhere in the midle 
+                break; // not changing (or in the midle)
         }
         _status = 0;
         _publishStatus();
@@ -390,6 +389,13 @@ void SmartIotDoorCmd::_publishStatus(){
     }
     data["value"]= _value;
     data["sensor"]= _sensorActivated;
+
+    #ifdef DEBUG
+        Interface::get().getLogger() << F(">DoorCmd node, status;") << endl;
+        Interface::get().getLogger() << F("  - value: ") << _value << endl;
+        Interface::get().getLogger() << F("  - status: ") << _status << endl;
+        Interface::get().getLogger() << F("  - sensor: ") << _sensorActivated << endl;
+    #endif // DEBUG
 
     send(data);
 

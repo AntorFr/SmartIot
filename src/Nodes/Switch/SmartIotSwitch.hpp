@@ -4,6 +4,7 @@
 #include <Ticker.h>
 #include <SmartIot.h>
 
+//#define DEBUG 1
 
 class SmartIotSwitch : public SmartIotNode  {
     public:

@@ -57,7 +57,7 @@ void SmartIotSwitch::_impulse(uint32_t waveMs) {
 
 void SmartIotSwitch::_nImpulse(uint32_t waveMs) { 
     if (_numberImpulse > 0) {
-        _numberImpulse =- 1;
+        --_numberImpulse;
         _impulse(waveMs);
     } else {
         _ticker2.detach();
