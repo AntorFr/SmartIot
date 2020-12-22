@@ -213,7 +213,7 @@ void BootNormal::_publish_stats(){
 
     serializeJson(statsData,(char*) _jsonMessageBuffer.get(),JSON_MSG_BUFFER);
 
-    uint16_t statsPacketId = Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("log/heartbeat")), 1, true, _jsonMessageBuffer.get());
+    uint16_t statsPacketId = Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("log/heartbeat")), 1, false, _jsonMessageBuffer.get());
     Interface::get().getLogger() << F("  Stats published at: ") << _mqttTopic.get() << endl;
     if (statsPacketId != 0) _statsTimer.tick();
     Interface::get().event.type = SmartIotEventType::SENDING_STATISTICS;
@@ -276,9 +276,10 @@ bool BootNormal::_publishOtaStatus(uint32_t status, const char* info) {
   if (info) {
     data["info"]  = info;
   }
+  serializeJson(data,(char*) _jsonMessageBuffer.get(),JSON_MSG_BUFFER);
 
   return Interface::get().getMqttClient().publish(
-            _deviceMqttTopic(PSTR("log/status")), 0, true, _jsonMessageBuffer.get()) != 0;
+            _deviceMqttTopic(PSTR("log/ota")), 0, false, _jsonMessageBuffer.get()) != 0;
 }
 
 void BootNormal::_endOtaUpdate(bool success, uint8_t update_error) {

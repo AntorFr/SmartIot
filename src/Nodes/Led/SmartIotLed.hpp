@@ -29,8 +29,12 @@ class SmartIotLed : public SmartIotNode  {
     static std::vector<LedObject*> objects;
 
     bool ledCmdHandler(const String& json);
+    bool ledCmdHandler(const SmartIotRange& range,const String& value);
 
-    template<uint8_t PIN,EOrder RGB_ORDER = GRB>
+    void turnOn();
+    void turnOff();
+
+    template<uint8_t PIN,EOrder RGB_ORDER = GRB> 
     void addLeds(){
         begin();
         FastLED.addLeds<WS2812,PIN, RGB_ORDER>(_leds, _nbLed); //GRB RGB //<NEOPIXEL,DATA_PIN, GRB>
@@ -40,22 +44,23 @@ class SmartIotLed : public SmartIotNode  {
 
 
     protected:
-    void setup() override;
-    void loop() override;
-    void stop() override;
-    //void onReadyToOperate();
-    uint8_t _nbObjects(){ return static_cast<uint8_t>(SmartIotLed::objects.size());} 
+        void setup() override;
+        void loop() override;
+        void stop() override;
+        virtual bool loadNodeConfig(ArduinoJson::JsonObject& data) override;
+        //void onReadyToOperate();
+        uint8_t _nbObjects(){ return static_cast<uint8_t>(SmartIotLed::objects.size());} 
 
     private:
-    void ledObjCmdHandler(ArduinoJson::JsonObject& data,LedObject* obj);
+        void ledObjCmdHandler(ArduinoJson::JsonObject& data,LedObject* obj);
 
-    void begin();
-    void display();
-    uint16_t _milli_amps;  // 4000 IMPORTANT: set the max milli-Amps of your power supply (4A = 4000mA)
-    uint8_t _fps;  // 60 here you can control the speed. With the Access Point / Web Server the animations run a bit slower.
-    Ticker _display;
-    uint16_t _nbLed;
-    CRGB* _leds;
+        void begin();
+        void display();
+        uint16_t _milli_amps;  // 4000 IMPORTANT: set the max milli-Amps of your power supply (4A = 4000mA)
+        uint8_t _fps;  // 60 here you can control the speed.
+        Ticker _display;
+        uint16_t _nbLed;
+        CRGB* _leds;
 
 };
 

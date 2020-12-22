@@ -199,7 +199,7 @@ bool SmartIotDoorCmd::open(){
     bool _return = false;
     switch(_status) {
         case 0: // stop
-            if (_value == 0 || (_pinOpen != _pinClose)){  // closed
+            if (_value == 0 || (_pinOpen != _pinClose) || !_sensorActivated){  // closed 
                 _switchOpen.impulse(500);
                 _startMove(1);
                 _return = true;
@@ -241,7 +241,7 @@ bool SmartIotDoorCmd::close(){
     bool _return = false;
     switch(_status) {
         case 0: // stop
-            if (_value == 100 || (_pinOpen != _pinClose)){ // open
+            if (_value == 100 || (_pinOpen != _pinClose) || !_sensorActivated){ // open
                 _switchClose.impulse(500);
                 _startMove(2);
                 _return = true;

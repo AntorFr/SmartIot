@@ -16,11 +16,6 @@ SmartIotLed::SmartIotLed(const char* id,const char* name, const char* type)
 }
 
 void SmartIotLed::begin(){
-    _nbLed = 0;
-    for (LedObject* iObj : SmartIotLed::objects) {
-        _nbLed = std::max(iObj->_firstPos + iObj->_nbLed ,static_cast<int>(_nbLed));
-    }
-    _leds =new CRGB [_nbLed];
     fill_solid(_leds,_nbLed, CRGB::Black);
 }
 
@@ -31,9 +26,20 @@ void SmartIotLed::setup(){
     FastLED.setBrightness(100);
     //FastLED.setMaxPowerInVoltsAndMilliamps(5, _milli_amps);
 
-    _display.attach_ms(1000/_fps,std::bind(&SmartIotLed::display, this));
+    _nbLed = 0;
+    for (LedObject* iObj : SmartIotLed::objects) {
+        _nbLed = std::max(iObj->_firstPos + iObj->_nbLed ,static_cast<int>(_nbLed));
+    }
+    _leds =new CRGB [_nbLed];
+
+    _display.attach_ms_scheduled(1000/_fps,std::bind(&SmartIotLed::display, this));
+    //_display.attach_ms(1000/_fps,std::bind(&SmartIotLed::display, this));
 
     Interface::get().getLogger() << F(" Led node setuped (") << _nbLed << F(" leds)") << endl;
+
+    advertise("state").setName("state").setRetained(true).setDatatype("integer").settable([=](const SmartIotRange& range, const String& value){
+        return this->ledCmdHandler(range,value);
+        });
 }
 
 void SmartIotLed::stop(){
@@ -45,6 +51,16 @@ LedObject* SmartIotLed::createObject(const uint8_t firstPos,const uint8_t nbled,
     LedObject* obj = new LedObject(firstPos,nbled,name);
     objects.push_back(obj);
     return obj;
+}
+
+bool SmartIotLed::ledCmdHandler(const SmartIotRange& range, const String& value){
+    #ifdef DEBUG
+        Interface::get().getLogger() << F("ledC node, handle action: ") << value << endl;
+    #endif // DEBUG
+    if (value == "100") { turnOn();}
+    else if (value == "0") {turnOff();}
+    else { return false; }
+    return true;
 }
 
 bool SmartIotLed::ledCmdHandler(const String& json){
@@ -103,4 +119,47 @@ LedObject* SmartIotLed::findObject(const char* name){
             if (strcmp(name, iObj->getName()) == 0) { return iObj;}
         }
         return 0;
+}
+
+bool SmartIotLed::loadNodeConfig(ArduinoJson::JsonObject& data){
+    SmartIotNode::loadNodeConfig(data);
+    if(data.containsKey("fps")) {
+        setFps(data["fps"]);
+    }
+    if(!data.containsKey("objects")) {
+        if (data.containsKey("nb_led")){
+            LedObject* obj = createObject(0,data["nb_led"],data["node_name"]);
+            if(data.containsKey("audio_pin")) {
+                obj->addAudio(data["audio_pin"]);  
+            }
+            if(data.containsKey("auto_play") && data.containsKey("auto_play_duration")) {
+                obj->setAutoPlay(data["auto_play"].as<bool>(),data["auto_play_duration"].as<uint8_t>());  
+            }
+        } else {
+            Interface::get().getLogger() << F("✖ Led config invalid: nb_led is missing") << endl;
+        }
+    } else {
+        for (JsonPair item : data["objects"].as<JsonObject>()) {
+            JsonObject objData = item.value().as<JsonObject>();
+            if (objData.containsKey("nb_led") && objData.containsKey("name") && objData.containsKey("start_led") ) {
+                LedObject* obj = createObject(objData["start_led"],objData["nb_led"],objData["name"].as<const char*>());
+                if(objData.containsKey("audio_pin")) {
+                    obj->addAudio(objData["audio_pin"]);  
+                }
+            } else {
+                Interface::get().getLogger() << F("✖ Led config object invalid...") << endl;
+            }
+        }
+    }
+    return true;
+}
+
+void SmartIotLed::turnOff(){
+    fill_solid(_leds,_nbLed, CRGB::Black);
+    FastLED.show();
+    _display.detach();
+}
+
+void SmartIotLed::turnOn(){
+    _display.attach_ms_scheduled(1000/_fps,std::bind(&SmartIotLed::display, this));
 }

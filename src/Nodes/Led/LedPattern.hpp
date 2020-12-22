@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Led.hpp"
+#include "GradientPalettes.hpp"
 
 class LedObject;
 
@@ -124,7 +125,7 @@ namespace SmartIotInternals {
     class TwinkleFoxPattern : public LedPattern  {
         friend LedObject;
         public:
-        TwinkleFoxPattern(const LedObject* obj):LedPattern(obj),_speed(4),_density(5),gBackgroundColor(CRGB::Black),_autoBGColor(false),_coolLikeIncandescent(true){}
+            TwinkleFoxPattern(const LedObject* obj, CRGBPalette16 palette):LedPattern(obj),_speed(4),_density(5),gBackgroundColor(CRGB::Black),_autoBGColor(false),_coolLikeIncandescent(true){gCurrentPalette = palette;}
         protected:
             void display() override;
             CRGB computeOneTwinkle( uint32_t ms, uint8_t salt);
@@ -138,6 +139,29 @@ namespace SmartIotInternals {
             bool _coolLikeIncandescent;
             CRGBPalette16 gCurrentPalette;
     };
+    class TwinklePattern : public LedPattern  {
+        friend LedObject;
+        public:
+            TwinklePattern(const LedObject* obj, CRGBPalette16 palette):LedPattern(obj),_startingBritghtness(64),_fadeInSpeed(32),_fadeOutSpeed(20),_density(255){ gCurrentPalette = palette;}
+        protected:
+            void init() override;
+            void display() override;
+            CRGB makeBrighter( const CRGB& color, fract8 howMuchBrighter);
+            CRGB makeDarker( const CRGB& color, fract8 howMuchDarker);
+            bool getPixelDirection( uint16_t i);
+            void setPixelDirection( uint16_t i, bool dir);
+            void brightenOrDarkenEachPixel(fract8 fadeUpAmount, fract8 fadeDownAmount);
+
+        private:
+            CEveryNMillis _ticker;
+            uint8_t _startingBritghtness;
+            uint8_t _fadeInSpeed;
+            uint8_t _fadeOutSpeed;
+            uint8_t _density;
+            uint8_t*  _directionFlags;
+            CRGBPalette16 gCurrentPalette;
+            enum { GETTING_DARKER = 0, GETTING_BRIGHTER = 1 };
+    };
     class RainbowSoundPattern : public LedPattern  {
         friend LedObject;
         public:
@@ -145,6 +169,41 @@ namespace SmartIotInternals {
         protected:
             void display() override;
     };
-
+    class HeatMapPattern : public LedPattern  {
+        friend LedObject;
+        public:
+        HeatMapPattern(const LedObject* obj,CRGBPalette16 palette, bool up):LedPattern(obj),_cooling(49),_sparking(60){gCurrentPalette = palette; _up = up;}
+        protected:
+            void init() override;
+            void display() override;
+        private:
+            CRGBPalette16 gCurrentPalette;
+            bool _up;
+            uint8_t _halfLedCount;
+            byte** _heat;
+            uint8_t _cooling;
+            uint8_t _sparking;
+    };
+    class ColorWavePattern : public LedPattern  {
+        friend LedObject;
+        public:
+        ColorWavePattern(const LedObject* obj,CRGBPalette16 palette):LedPattern(obj),sPseudotime(0),sLastMillis(0),sHue16(0){gCurrentPalette = palette;}
+        protected:
+            void display() override;
+        private:
+            CRGBPalette16 gCurrentPalette;
+            uint16_t sPseudotime;
+            uint16_t sLastMillis;
+            uint16_t sHue16;
+    };
+    class SinelonPattern : public LedPattern  {
+        friend LedObject;
+        public:
+        SinelonPattern(const LedObject* obj):LedPattern(obj),prevpos(0){}
+        protected:
+            void display() override;
+        private:
+            uint16_t prevpos;
+    };
 
 } // namespace SmartIotInternals
