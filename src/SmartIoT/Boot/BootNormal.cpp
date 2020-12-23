@@ -93,10 +93,14 @@ void BootNormal::setup() {
   strcat_P(_mqttClientId.get(), PSTR("-"));
   strcat(_mqttClientId.get(), Interface::get().getConfig().get().deviceId);
   Interface::get().getMqttClient().setClientId(_mqttClientId.get());
-  char* mqttWillTopic = _prefixMqttTopic(PSTR("/$state"));
+  char* mqttWillTopic = _deviceMqttTopic(PSTR("log/state"));
   _mqttWillTopic = std::unique_ptr<char[]>(new char[strlen(mqttWillTopic) + 1]);
   memcpy(_mqttWillTopic.get(), mqttWillTopic, strlen(mqttWillTopic) + 1);
   Interface::get().getMqttClient().setWill(_mqttWillTopic.get(), 1, true, "lost");
+
+#ifdef DEBUG
+  Interface::get().getLogger() << F("✔ MQTT lastWill topic: ") << _mqttWillTopic.get() << endl;
+#endif
 
   if (Interface::get().getConfig().get().mqtt.auth) Interface::get().getMqttClient().setCredentials(Interface::get().getConfig().get().mqtt.username, Interface::get().getConfig().get().mqtt.password);
 
@@ -172,7 +176,7 @@ void BootNormal::loop() {
 
   if (_mqttOfflineMessageId == 0 && Interface::get().flaggedForSleep) {
     Interface::get().getLogger() << F("Device in preparation to sleep...") << endl;
-    _mqttOfflineMessageId = Interface::get().getMqttClient().publish(_prefixMqttTopic(PSTR("/$state")), 1, true, "sleeping");
+    _mqttOfflineMessageId = Interface::get().getMqttClient().publish(_mqttWillTopic.get(), 1, true, "sleeping");
   }
 
   if (_statsTimer.check()) {
@@ -627,6 +631,8 @@ void BootNormal::_onMqttConnected() {
   _mqttReconnectTimer.deactivate();
   _statsTimer.activate();
 
+  Interface::get().getMqttClient().publish(_mqttWillTopic.get(), 1, true, "connected");
+  
   Update.end();
 }
 
@@ -1024,7 +1030,7 @@ bool SmartIotInternals::BootNormal::__handleResets(char * topic, char * payload,
     && strcmp_P(_mqttTopicLevels.get()[0], PSTR("setup")) == 0
     && strcmp_P(_mqttTopicLevels.get()[1], PSTR("reset")) == 0
     ) {
-    Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("/log/status")), 1, false, "{\"log\":\"Flagged for reboot\"}" );
+    Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("/log/info")), 1, false, "Flagged for reboot");
     _flaggedForReboot = true;
     Interface::get().getLogger() << F("Flagged for reboot") << endl;
     return true;
@@ -1082,6 +1088,7 @@ bool SmartIotInternals::BootNormal::__handleConfig(char * topic, char * payload,
     Interface::get().getMqttClient().publish(topic, 1, true, "");
     if (Interface::get().getConfig().patch(_mqttPayloadBuffer.get())) {
       Interface::get().getLogger() << F("✔ Configuration updated") << endl;
+      Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("/log/info")), 1, false, "Configuration updated" );
       _flaggedForReboot = true;
       Interface::get().getLogger() << F("Flagged for reboot") << endl;
     } else {
@@ -1103,10 +1110,6 @@ bool SmartIotInternals::BootNormal::__handleNodeProperty(char * topic, char * pa
   char* node_type = _mqttTopicLevels.get()[0];
 
   //char* node = _mqttTopicLevels.get()[1];
-
-  #ifdef DEBUG
-    Interface::get().getLogger() << F("Recived network message for ") << SmartIoTNode->getId() << endl;
-  #endif // DEBUG
 
   /*
   int16_t rangeSeparator = -1;
@@ -1138,6 +1141,10 @@ bool SmartIotInternals::BootNormal::__handleNodeProperty(char * topic, char * pa
     Interface::get().getLogger() << F("Node ") << node_type << F("/") << node_name << F(" not registered") << endl;
     return true;
   }
+
+  #ifdef DEBUG
+    Interface::get().getLogger() << F("Recived network message for ") << SmartIoTNode->getId() << endl;
+  #endif // DEBUG
 
   Property* propertyObject = nullptr;
   for (Property* iProperty : SmartIoTNode->getProperties()) {
