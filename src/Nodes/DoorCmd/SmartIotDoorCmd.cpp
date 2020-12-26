@@ -55,8 +55,7 @@ void SmartIotDoorCmd::setup() {
 }
 
 void SmartIotDoorCmd::onReadyToOperate() {
-    if(_pinOpen == 0 || _pinClose == 0 ) { Interface::get().getLogger() << F("✖ Door Command node") << getName() << F(" pins not initialized")  << endl;}
-    else { Interface::get().getLogger() << F("• Ready to operate Door Command node ") << getName() << endl;}
+    Interface::get().getLogger() << F("• Ready to operate Door Command node ") << getName() << endl;
 
     if(_sensorActivated){
         _readSensor();

@@ -138,7 +138,7 @@ void BootNormal::loop() {
     _mqttConnect();
     return;
   }
-
+  
   if (!Interface::get().getMqttClient().connected()) return;
   // here, we are connected to the broker
 
@@ -463,6 +463,14 @@ void BootNormal::_mqttConnect() {
 }
 
 bool BootNormal::_publish_config() {
+  uint16_t packetId;
+  Interface::get().getLogger() << F(" > sending  config...") << endl;
+  packetId = Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("log/config")), 1, true, Interface::get().getConfig().getSafeConfigFile());
+  return (packetId != 0); 
+}
+
+
+bool BootNormal::_publish_advertise() {
   auto numSettings = ISmartIotSetting::settings.size();
   auto numNodes = SmartIotNode::nodes.size();
   DynamicJsonDocument jsonBuffer (
@@ -529,7 +537,7 @@ bool BootNormal::_publish_config() {
   }
 
   serializeJson(data,(char*) _jsonMessageBuffer.get(),JSON_MSG_BUFFER);
-  Interface::get().getLogger() << F(" 〽 sending  config...") << endl;
+  Interface::get().getLogger() << F(" 〽 sending  advertise...") << endl;
   packetId = Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("log/advertise")), 1, true, _jsonMessageBuffer.get());
   return (packetId != 0); 
 }
@@ -539,7 +547,7 @@ void BootNormal::_advertise() {
     case AdvertisementProgress::GlobalStep::PUB_INIT:
     {
       Interface::get().getLogger() << F("〽 Start  advertise...") << endl;
-      if (_publish_config()) {
+      if (_publish_advertise()) {
         _advertisementProgress.globalStep = AdvertisementProgress::GlobalStep::SUB_SMARTIOT;
       } 
       break;
@@ -1067,8 +1075,20 @@ bool SmartIotInternals::BootNormal::__handleAdvertise(char * topic, char * paylo
           && strcmp_P(_mqttTopicLevels.get()[3], PSTR("set")) == 0)
       )
     ) {
-    _publish_config();
+    _publish_advertise();
     return true;
+  } else if (    
+    _mqttTopicLevelsCount >= 3
+    && strcmp_P(_mqttTopicLevels.get()[0], PSTR("log")) == 0
+    && strcmp_P(_mqttTopicLevels.get()[1], PSTR("config")) == 0
+    && (
+      strcmp_P(_mqttTopicLevels.get()[2], PSTR("set")) == 0
+      || (strcmp(_mqttTopicLevels.get()[2], Interface::get().getConfig().get().deviceId) == 0
+          && strcmp_P(_mqttTopicLevels.get()[3], PSTR("set")) == 0)
+      )
+    ) {
+    _publish_config();
+    return true; 
   }
   return false;
 }
@@ -1089,6 +1109,7 @@ bool SmartIotInternals::BootNormal::__handleConfig(char * topic, char * payload,
     if (Interface::get().getConfig().patch(_mqttPayloadBuffer.get())) {
       Interface::get().getLogger() << F("✔ Configuration updated") << endl;
       Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("/log/info")), 1, false, "Configuration updated" );
+      _publish_config();
       _flaggedForReboot = true;
       Interface::get().getLogger() << F("Flagged for reboot") << endl;
     } else {

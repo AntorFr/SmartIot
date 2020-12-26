@@ -22,6 +22,7 @@ void SmartIotSwitch::setup() {
 
 void SmartIotSwitch::onReadyToOperate() {
     Interface::get().getLogger() << F("• Ready to operate Switch node ") << getName() << endl;
+    digitalWrite(_pin, _state);
 }
 
 void SmartIotSwitch::loop() {}
@@ -36,9 +37,13 @@ bool SmartIotSwitch::loadNodeConfig(ArduinoJson::JsonObject& data){
 
 void SmartIotSwitch::setPin(uint8_t pin, bool defaultstate){
     _pin = pin;
-    pinMode(pin, OUTPUT);
-    digitalWrite(pin, defaultstate);
     _state = defaultstate;
+
+    pinMode(_pin, OUTPUT);
+    digitalWrite(_pin, _state);
+    #ifdef DEBUG
+        Interface::get().getLogger() << F("> turn pin ") << _pin << F(" to ") << _state << endl;
+    #endif
 }
 
 
