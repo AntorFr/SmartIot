@@ -128,19 +128,27 @@ void BootNormal::loop() {
     ESP.restart();
   }
 
-  if (_otaOngoing) return;
+  if(_mqttReconnectTimer.isActive()){
+    if (_mqttReconnectTimer.check()) {
+      Interface::get().getLogger() << F("↕ _mqttReconnectTimer up ...") << endl;
+      _mqttConnect();
+      return;
+    } 
+    if (_mqttReconnectTimer.reachMax()){
+      Interface::get().getLogger() << F("↕ too many mqtt connect attent > reset device ...") << endl;
+      _flaggedForReboot = true;
+    }
+  }
+
 
   for (SmartIotNode* iNode : SmartIotNode::nodes) {
-    if (iNode->runLoopDisconnected || (Interface::get().getMqttClient().connected()) && _mqttConnectNotified ) iNode->loop();
+      if (!_otaOngoing && (iNode->runLoopDisconnected)) iNode->loop();
   }
 
-  if (_mqttReconnectTimer.check()) {
-    _mqttConnect();
-    return;
-  }
-  
   if (!Interface::get().getMqttClient().connected()) return;
   // here, we are connected to the broker
+  
+  if (_otaOngoing) return; // if OTA ongoing do noting
 
   if (!_advertisementProgress.done) {
     _advertise();
@@ -170,6 +178,12 @@ void BootNormal::loop() {
 
     _mqttConnectNotified = true;
     return;
+  }
+
+  if (_mqttConnectNotified){
+    for (SmartIotNode* iNode : SmartIotNode::nodes) {
+      if (!(iNode->runLoopDisconnected)) iNode->loop();
+    }
   }
 
   // here, we have notified the sketch we are ready
@@ -296,6 +310,7 @@ void BootNormal::_endOtaUpdate(bool success, uint8_t update_error) {
     _publishOtaStatus(200);  // 200 OK
     _flaggedForReboot = true;
   } else {
+    Update.end();
     uint8_t code;
     String info;
     switch (update_error) {
@@ -323,6 +338,10 @@ void BootNormal::_endOtaUpdate(bool success, uint8_t update_error) {
         code = 500;  // 500 Internal Server Error
         info.concat(F("FLASH_ERROR"));
         break;
+      case 99:
+        code = 500;  // 500 Internal Server Error
+        info.concat(F("MQTT DISCONNECT"));
+        break;       
       default:
         code = 500;  // 500 Internal Server Error
         info.concat(F("INTERNAL_ERROR "));
@@ -457,6 +476,7 @@ void BootNormal::_mqttConnect() {
   if (!Interface::get().disable) {
     if (Interface::get().led.enabled) Interface::get().getBlinker().start(LED_MQTT_DELAY);
     _mqttConnectNotified = false;
+    Interface::get().getMqttClient().disconnect();
     Interface::get().getLogger() << F("↕ Attempting to connect to MQTT...") << endl;
     Interface::get().getMqttClient().connect();
   }
@@ -640,8 +660,6 @@ void BootNormal::_onMqttConnected() {
   _statsTimer.activate();
 
   Interface::get().getMqttClient().publish(_mqttWillTopic.get(), 1, true, "connected");
-  
-  Update.end();
 }
 
 void BootNormal::_onMqttDisconnected(AsyncMqttClientDisconnectReason reason) {
@@ -668,6 +686,11 @@ void BootNormal::_onMqttDisconnected(AsyncMqttClientDisconnectReason reason) {
       Interface::get().eventHandler(Interface::get().event);
 
       return;
+    }
+
+    if(_otaOngoing){
+      //OTA was on going, stop it...
+      _endOtaUpdate(false,99);
     }
 
     _mqttConnect();
@@ -968,12 +991,6 @@ bool SmartIotInternals::BootNormal::__handleOTAUpdates(char* topic, char* payloa
         String progress(_otaSizeDone);
         progress.concat(F("/"));
         progress.concat(_otaSizeTotal);
-        Interface::get().getLogger() << F("Receiving OTA firmware (") << progress << F(")...") << endl;
-
-        Interface::get().event.type = SmartIotEventType::OTA_PROGRESS;
-        Interface::get().event.sizeDone = _otaSizeDone;
-        Interface::get().event.sizeTotal = _otaSizeTotal;
-        Interface::get().eventHandler(Interface::get().event);
 
         static uint32_t count = 0;
         if (count == 100) {
@@ -982,7 +999,14 @@ bool SmartIotInternals::BootNormal::__handleOTAUpdates(char* topic, char* payloa
         }
         ++count;
 
-                                                  //  Done with the update?
+        Interface::get().getLogger() << F("Receiving OTA firmware (") << progress << F(")...") << endl;
+
+        Interface::get().event.type = SmartIotEventType::OTA_PROGRESS;
+        Interface::get().event.sizeDone = _otaSizeDone;
+        Interface::get().event.sizeTotal = _otaSizeTotal;
+        Interface::get().eventHandler(Interface::get().event);
+
+        //  Done with the update?
         if (index + len == total) {
           // With base64-coded firmware, we may have provided a length off by one or two
           // to Update.begin() because the base64-coded firmware may use padding (one or

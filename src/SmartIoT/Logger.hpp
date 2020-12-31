@@ -4,8 +4,11 @@
 
 namespace SmartIotInternals {
 class SmartIotClass;
+class Config;
+
 class Logger : public Print {
   friend SmartIotClass;
+  friend Config;
 
  public:
   Logger();

@@ -123,15 +123,13 @@ bool SmartIotSwitch::SwitchHandler(const String& json){
     JsonObject data = parseJsonBuff.as<JsonObject>();
     //serializeJsonPretty(data, Serial); 
 
-    if(data.containsKey("value")){ 
-        if(data["value"].is<int>()){
-            #ifdef DEBUG
-                Interface::get().getLogger() << F("Switch node, handle value: ") << data["value"].as<int>() << endl;
-            #endif // DEBUG
+    if(data.containsKey("value") && data["value"].is<int>()){ 
+        #ifdef DEBUG
+            Interface::get().getLogger() << F("Switch node, handle value: ") << data["value"].as<int>() << endl;
+        #endif // DEBUG
 
-            if(data["value"]== 100) {SmartIotSwitch::turnOn();}
-            if(data["value"]== 0) {SmartIotSwitch::turnOff();}
-        }
+        if(data["value"]== 100) {SmartIotSwitch::turnOn();}
+        if(data["value"]== 0) {SmartIotSwitch::turnOff();}
         return true;
     }     
     return false;

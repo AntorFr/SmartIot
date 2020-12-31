@@ -25,6 +25,10 @@ bool ExponentialBackoffTimer::check() {
   }
 }
 
+bool ExponentialBackoffTimer::reachMax(){
+  return (_timer.isActive() && _retryCount >= _maxBackoff);
+}
+
 void ExponentialBackoffTimer::activate() {
   if (_timer.isActive()) return;
 

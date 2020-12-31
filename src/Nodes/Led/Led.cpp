@@ -67,7 +67,7 @@ LedObject::LedObject(const uint8_t firstPos,const uint8_t nbLed, const char* nam
         _patterns["oceanTwinkles"]= [](LedObject* ledObj) -> LedPattern* { return new TwinkleFoxPattern(ledObj,OceanColors_p); };
 
         _autoplayList = {
-                        "confetti","star","pride","sinelon","fire","water","cloudTwinkles","rainbowTwinkles","snowTwinkles","incandescentTwinkles","redGreenWhiteTwinkles","hollyTwinkles","redWhiteTwinkles",
+                        "confetti","star","pride","sinelon","cloudTwinkles","rainbowTwinkles","snowTwinkles","incandescentTwinkles","redGreenWhiteTwinkles","hollyTwinkles","redWhiteTwinkles",
                         "blueWhiteTwinkles","fairyLightTwinkles","snow2Twinkles","iceTwinkles","retroC9Twinkles","partyTwinkles","forestTwinkles","lavaTwinkles","fireTwinkles","cloud2Twinkles","oceanTwinkles"
                         };
 

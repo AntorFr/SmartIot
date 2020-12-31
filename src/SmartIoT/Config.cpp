@@ -119,6 +119,26 @@ bool Config::load() {
   strlcpy(_configStruct.mqtt.password, reqMqttPassword, MAX_MQTT_CREDS_LENGTH);
   _configStruct.ota.enabled = reqOtaEnabled;
 
+  if(parsedJson.containsKey("led_pin") && parsedJson["led_pin"].is<uint8_t>()){
+    Interface::get().led.enabled = true;
+    Interface::get().led.pin = parsedJson["led_pin"].as<uint8_t>();
+  }
+
+  if(parsedJson.containsKey("reset_pin") && parsedJson["reset_pin"].is<uint8_t>()){
+    Interface::get().reset.enabled = true;
+    Interface::get().reset.triggerPin = parsedJson["reset_pin"].as<uint8_t>();
+  }
+
+  if(parsedJson.containsKey("log") && parsedJson["value"].is<bool>()){
+    Interface::get().getLogger().setLogging(parsedJson["log"].as<bool>());
+    
+  }
+
+  
+
+
+
+
   /* Parse the settings */
   JsonObject settingsObject = parsedJson["settings"].as<JsonObject>();
 

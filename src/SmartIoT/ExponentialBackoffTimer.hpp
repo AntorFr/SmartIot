@@ -9,6 +9,7 @@ class ExponentialBackoffTimer {
   ExponentialBackoffTimer(uint16_t initialInterval, uint8_t maxBackoff);
   void activate();
   bool check();
+  bool reachMax();
   void deactivate();
   bool isActive() const;
 
