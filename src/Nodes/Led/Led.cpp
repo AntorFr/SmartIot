@@ -97,7 +97,7 @@ void LedObject::_setRandomPattern(){
     auto item = _autoplayList.begin();
     std::advance( item, random8(_autoplayList.size()-1));
     setPattern(*item);
- 
+    
 }
 
 void LedObject::setPattern(String pattern) {
@@ -150,8 +150,17 @@ void LedObject::setAutoPlay(bool autoplay, uint8_t duration) {
     _autoplayDuration=duration;
 
     if(_autoplay) {
+        _setRandomPattern();
         _autoPlayTicker.attach_scheduled(_autoplayDuration,std::bind(&LedObject::_setRandomPattern, this));
     } else {
          _autoPlayTicker.detach();
     }
+}
+
+void LedObject::_publishStatus(ArduinoJson::JsonObject& data){
+    data[F("AutoPlay")] = _autoplay;
+    data[F("Pattern")] = _pattern;
+    data[F("Speed")] = _speed;
+    data[F("Color")] = "#"+ String((((long)_color.r << 16) | ((long)_color.g << 8 ) | (long)_color.b),HEX);
+    data[F("volume")] = _avgVolume;
 }

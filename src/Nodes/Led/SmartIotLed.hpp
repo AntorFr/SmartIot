@@ -24,6 +24,8 @@ class SmartIotLed : public SmartIotNode  {
 
     LedObject* createObject(const uint8_t firstPos,const uint8_t nbled,const char* name);
     void setFps(uint8_t fps){_fps=fps;}
+    void setBrightness(uint8_t scale);
+    uint8_t getBrightness();
 
     static LedObject* findObject(const char* name);
     static std::vector<LedObject*> objects;
@@ -50,9 +52,12 @@ class SmartIotLed : public SmartIotNode  {
         virtual bool loadNodeConfig(ArduinoJson::JsonObject& data) override;
         //void onReadyToOperate();
         uint8_t _nbObjects(){ return static_cast<uint8_t>(SmartIotLed::objects.size());} 
+        
 
     private:
         void ledObjCmdHandler(ArduinoJson::JsonObject& data,LedObject* obj);
+
+        void _publishStatus();
 
         void begin();
         void display();

@@ -63,6 +63,7 @@ class LedObject {
         void show();
         void showed();
         bool toShow();
+        void _publishStatus(ArduinoJson::JsonObject& data);
 
         std::map<String, std::function<SmartIotInternals::LedPattern*(LedObject* ledObj)>> _patterns;
 };
