@@ -67,6 +67,7 @@ bool SmartIotLed::ledCmdHandler(const SmartIotRange& range, const String& value)
 
     if (intValue == 0) { 
         turnOff();
+        setBrightness(0);
     } else {
         turnOn();
         setBrightness(intValue);
