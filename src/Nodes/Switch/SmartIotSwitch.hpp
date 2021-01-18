@@ -37,4 +37,6 @@ class SmartIotSwitch : public SmartIotNode  {
     void _unbounce(){_debounceFlag = false;}
     void _impulse(uint32_t waveMs);
     void _nImpulse(uint32_t waveMs); 
+
+    void _publishStatus();
 };

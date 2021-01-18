@@ -6,7 +6,7 @@ LedObject::LedObject(const uint8_t firstPos,const uint8_t nbLed, const char* nam
     :_nbLed(nbLed)
     ,_firstPos(firstPos)
     ,_speed(30)
-    ,_color(CRGB::Black)
+    ,_color(CRGB::White)
     ,_gCurrentPalette(CRGB::Black)
     ,_name(name)
     ,_pattern('off')
@@ -158,9 +158,15 @@ void LedObject::setAutoPlay(bool autoplay, uint8_t duration) {
 }
 
 void LedObject::_publishStatus(ArduinoJson::JsonObject& data){
-    data[F("AutoPlay")] = _autoplay;
-    data[F("Pattern")] = _pattern;
-    data[F("Speed")] = _speed;
-    data[F("Color")] = "#"+ String((((long)_color.r << 16) | ((long)_color.g << 8 ) | (long)_color.b),HEX);
+    data[F("auto_play")] = _autoplay;
+    data[F("effect")] = _pattern;
+    data[F("speed")] = _speed;
+    //data[F("Color")] = "#"+ String((((long)_color.r << 16) | ((long)_color.g << 8 ) | (long)_color.b),HEX);
+
+    JsonObject color = data.createNestedObject("color");
+    color["r"] = _color.r;
+    color["g"] = _color.g;
+    color["b"] = _color.b;
+
     data[F("volume")] = _avgVolume;
 }

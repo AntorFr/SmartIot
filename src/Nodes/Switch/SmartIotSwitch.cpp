@@ -111,6 +111,9 @@ void SmartIotSwitch::_turn(bool state,bool _debounce){
     if (_debounce) {
         _debounceFlag = false;
     }
+    if(isSettable()) {
+        _publishStatus();
+    }
 }
 
 bool SmartIotSwitch::SwitchHandler(const String& json){
@@ -128,9 +131,35 @@ bool SmartIotSwitch::SwitchHandler(const String& json){
             Interface::get().getLogger() << F("Switch node, handle value: ") << data["value"].as<int>() << endl;
         #endif // DEBUG
 
-        if(data["value"]== 100) {SmartIotSwitch::turnOn();}
-        if(data["value"]== 0) {SmartIotSwitch::turnOff();}
+        if(data["value"]== 0) {turnOff();}
+        if(data["value"]== 100) {turnOn();}
+
         return true;
-    }     
+    }
+    if(data.containsKey("state")) {
+        #ifdef DEBUG
+            Interface::get().getLogger() << F("Switch node, handle state: ") << data["state"] << endl;
+        #endif // DEBUG
+
+        if(data["state"]=="OFF"){ turnOff();} 
+        else if (data["state"]=="ON") { turnOn();}
+        else { return false;}
+        return true;
+    } 
     return false;
+}
+
+void SmartIotSwitch::_publishStatus(){
+    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(3)); 
+    JsonObject data = jsonBuffer.to<JsonObject>();
+
+    if(_state) {
+        data[F("state")]=F("ON");
+    } else {
+        data[F("state")]=F("OFF");  
+    }
+
+
+    send(data);
+
 }

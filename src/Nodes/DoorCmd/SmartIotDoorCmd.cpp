@@ -40,6 +40,7 @@ void SmartIotDoorCmd::setup() {
     if(_pinLight!=0){
         _switchlight.setName(this->getName());
         _switchlight.setPin(_pinLight,false);
+        Interface::get().getLogger() << F(" > Light node setuped") << endl;
     } else {
         _switchlight.notSettable();
     }

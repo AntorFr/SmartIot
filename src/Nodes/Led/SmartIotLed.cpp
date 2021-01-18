@@ -87,6 +87,15 @@ bool SmartIotLed::ledCmdHandler(const String& json){
     if(data.containsKey("brightness")) {
         setBrightness(data["brightness"]);
     }
+    if(data.containsKey("state")) {
+        if(data["state"]=="OFF"){
+            turnOff();
+            setBrightness(0);
+        } else if (data["state"]=="ON") {
+            turnOn();
+            if(getBrightness()==0) {setBrightness(255);}
+        }
+    }
     //serializeJsonPretty(data, Serial); 
     if(!data.containsKey("objects")) {   
         LedObject* obj = SmartIotLed::objects.front();
@@ -103,9 +112,16 @@ bool SmartIotLed::ledCmdHandler(const String& json){
 }
 
 void SmartIotLed::ledObjCmdHandler(ArduinoJson::JsonObject& data,LedObject* obj){
-    if(data.containsKey("pattern")){ obj->setPattern(data["pattern"].as<String>()); }
+    if(data.containsKey("effect")){ 
+        if (data["effect"] == "autoPlay") {
+            obj->setAutoPlay(true);
+        } else {
+            obj->setPattern(data["effect"].as<String>());
+            obj->setAutoPlay(false);
+        }
+    }
     if(data.containsKey("speed")){ obj->setSpeed(data["speed"].as<uint8_t>()); }
-    if(data.containsKey("rgb")){ obj->setColor(data["rgb"][0],data["rgb"][1],data["rgb"][2]);}  
+    if(data.containsKey("rgb")){ obj->setColor(data["rgb"]["r"],data["rgb"]["g"],data["rgb"]["b"]);}  
 }
 
 void SmartIotLed::loop(){
@@ -196,13 +212,19 @@ void SmartIotLed::_publishStatus(){
     JsonObject data = jsonBuffer.to<JsonObject>();
 
     data[F("milli_amps")]=_milli_amps;
-    data[F("FPS")]=_fps;
+    data[F("fps")]=_fps;
     data[F("nb_led")]=_nbLed;
     data[F("brightness")]= getBrightness();
+    data[F("state")]= getBrightness()>0?F("ON"):F("OFF");
 
-    for (LedObject* iLedObj : objects){
-        JsonObject objData = data.createNestedObject(iLedObj->getName());
-        iLedObj->_publishStatus(objData);
+    if (_nbObjects()<= 1){
+        LedObject* iLedObj = objects.front();
+        iLedObj->_publishStatus(data);
+    } else {
+        for (LedObject* iLedObj : objects){
+            JsonObject objData = data.createNestedObject(iLedObj->getName());
+            iLedObj->_publishStatus(objData);
+        }
     }
     send(data);
 
