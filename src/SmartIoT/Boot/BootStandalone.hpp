@@ -36,7 +36,7 @@
 #include "Boot.hpp"
 #include "../Utils/ResetHandler.hpp"
 #include "../Utils/DeviceId.hpp"
-#include "BootStandaloneConst.hpp"
+#include "BootStandalone_Const.hpp"
 
 namespace SmartIotInternals {
 class BootStandalone : public Boot {

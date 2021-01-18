@@ -5,8 +5,11 @@
 !.vscode/extensions.json
 *.code-workspace
 
+# for privacy setup
+src/SmartIoT/Boot/BootStandalone_Const.hpp
+
 # Local History for Visual Studio Code
 .history/
 
-# for privacy setup
-src/SmartIoT/Boot/BootStandaloneConst.hpp
+
+
