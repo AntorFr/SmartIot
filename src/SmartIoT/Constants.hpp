@@ -16,7 +16,7 @@ namespace SmartIotInternals {
   const IPAddress ACCESS_POINT_IP(192, 168, 3, 1);
 
   const uint16_t DEFAULT_MQTT_PORT = 1883;
-  const char DEFAULT_MQTT_BASE_TOPIC[] = "setup/";
+  const char DEFAULT_MQTT_BASE_TOPIC[] = "home/";
 
   const uint8_t DEFAULT_RESET_PIN = 99; 
   const uint8_t DEFAULT_RESET_STATE = LOW;
