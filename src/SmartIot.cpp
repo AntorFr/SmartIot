@@ -143,6 +143,7 @@ void SmartIotClass::setup() {
     _selectedSmartIotBootMode = SmartIotBootMode::CONFIGURATION;
 #else
     Interface::get().getLogger() << F("Configuration invalid. CONFIG MODE is disabled.") << endl;
+    Interface::get().getConfig().setSmartIotBootModeOnNextBoot(SmartIotBootMode::STANDALONE);
     ESP.restart();
 #endif
   }

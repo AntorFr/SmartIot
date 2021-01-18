@@ -29,6 +29,8 @@ class Config {
   void setSmartIotBootModeOnNextBoot(SmartIotBootMode bootMode);
   SmartIotBootMode getSmartIotBootModeOnNextBoot();
   void write(const JsonObject config);
+  bool write(const char* config);
+  
   bool patch(const char* patch);
   void log() const;  // print the current config to log output
   bool isValid() const;

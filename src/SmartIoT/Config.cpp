@@ -238,6 +238,26 @@ SmartIotBootMode Config::getSmartIotBootModeOnNextBoot() {
   }
 }
 
+bool Config::write(const char* config) {
+  StaticJsonDocument<MAX_JSON_CONFIG_ARDUINOJSON_BUFFER_SIZE> JsonDoc;
+  if (deserializeJson(JsonDoc, config) != DeserializationError::Ok || !JsonDoc.is<JsonObject>()) {
+    Interface::get().getLogger() << F("✖ Invalid or too big JSON") << endl;
+    return false;
+  }
+
+  JsonObject configObject = JsonDoc.as<JsonObject>();
+
+  ConfigValidationResult configValidationResult = Validation::validateConfig(configObject);
+  if (!configValidationResult.valid) {
+    Interface::get().getLogger() << F("✖ Config file is not valid, reason: ") << configValidationResult.reason << endl;
+    return false;
+  }
+
+  write(configObject);
+  return true;
+
+}
+
 void Config::write(const JsonObject config) {
   if (!_spiffsBegin()) { return; }
 
@@ -248,6 +268,7 @@ void Config::write(const JsonObject config) {
     Interface::get().getLogger() << F("✖ Cannot open config file") << endl;
     return;
   }
+
   serializeJson(config, configFile);
   configFile.close();
 }

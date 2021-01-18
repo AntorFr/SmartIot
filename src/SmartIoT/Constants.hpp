@@ -13,12 +13,12 @@
 namespace SmartIotInternals {
   const char SMARTIOT_VERSION[] = "3.2.0";
 
-  const IPAddress ACCESS_POINT_IP(192, 168, 10, 23);
+  const IPAddress ACCESS_POINT_IP(192, 168, 3, 1);
 
   const uint16_t DEFAULT_MQTT_PORT = 1883;
   const char DEFAULT_MQTT_BASE_TOPIC[] = "setup/";
 
-  const uint8_t DEFAULT_RESET_PIN = 99;  // == D3 on nodeMCU
+  const uint8_t DEFAULT_RESET_PIN = 99; 
   const uint8_t DEFAULT_RESET_STATE = LOW;
   const uint16_t DEFAULT_RESET_TIME = 5 * 1000;
 
