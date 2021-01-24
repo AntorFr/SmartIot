@@ -44,7 +44,7 @@ void BootStandalone::setup() {
   if (Interface::get().led.enabled) Interface::get().getBlinker().start(LED_WIFI_DELAY);
 
   // Generate topic buffer
-  size_t baseTopicLength = strlen(DEFAULT_MQTT_BASE_TOPIC) + strlen(DeviceId::get());
+  size_t baseTopicLength = strlen(DEFAULT_MQTT_BASE_TOPIC) + strlen(DeviceId::getChipId());
   size_t longestSubtopicLength = 31 + 1;  // /$implementation/ota/firmware/+
   
   _mqttTopic = std::unique_ptr<char[]>(new char[baseTopicLength + longestSubtopicLength]);
@@ -65,10 +65,10 @@ void BootStandalone::setup() {
   Interface::get().getMqttClient().setServer(MQTT_SERVER, DEFAULT_MQTT_PORT);
   Interface::get().getMqttClient().setMaxTopicLength(MAX_MQTT_TOPIC_LENGTH);
 
-  _mqttClientId = std::unique_ptr<char[]>(new char[strlen(Interface::get().brand) + 1 + strlen(DeviceId::get()) + 1]);
+  _mqttClientId = std::unique_ptr<char[]>(new char[strlen(Interface::get().brand) + 1 + strlen(DeviceId::getChipId()) + 1]);
   strcpy(_mqttClientId.get(), Interface::get().brand);
   strcat_P(_mqttClientId.get(), PSTR("-"));
-  strcat(_mqttClientId.get(), DeviceId::get());
+  strcat(_mqttClientId.get(), DeviceId::getChipId());
   Interface::get().getMqttClient().setClientId(_mqttClientId.get());
   char* mqttWillTopic = _deviceMqttTopic(PSTR("log/state"));
   _mqttWillTopic = std::unique_ptr<char[]>(new char[strlen(mqttWillTopic) + 1]);
@@ -84,8 +84,6 @@ void BootStandalone::setup() {
 #if SMARTIOT_CONFIG
   ResetHandler::Attach();
 #endif
-
-  Interface::get().getConfig().log();
 
   _wifiConnect();
 }
@@ -172,7 +170,7 @@ char* BootStandalone::_deviceMqttTopic(PGM_P topic,bool set) {
   strcpy(_mqttTopic.get(), DEFAULT_MQTT_BASE_TOPIC);
   strcat_P(_mqttTopic.get(), topic);
   strcat_P(_mqttTopic.get(), PSTR("/"));
-  strcat(_mqttTopic.get(), DeviceId::get());
+  strcat(_mqttTopic.get(), DeviceId::getChipId());
   if (set) strcat_P(_mqttTopic.get(), PSTR("/set"));
   return _mqttTopic.get();
 }
@@ -181,7 +179,7 @@ char* BootStandalone::_firmwareMqttTopic(PGM_P topic) {
   _prefixMqttTopic();
   strcat_P(_mqttTopic.get(), topic);
   strcat_P(_mqttTopic.get(), PSTR("/"));
-  strcat(_mqttTopic.get(), Interface::get().firmware.name);
+  strcat(_mqttTopic.get(), DeviceId::getChipId());
   strcat_P(_mqttTopic.get(), PSTR("/firmware"));
   return _mqttTopic.get();
 }
@@ -274,9 +272,9 @@ void BootStandalone::_wifiConnect() {
     if (WiFi.getMode() != WIFI_STA) WiFi.mode(WIFI_STA);
 
     #ifdef ESP32
-    WiFi.setHostname(DeviceId::get());
+    WiFi.setHostname(DeviceId::getChipId());
     #elif defined(ESP8266)
-    WiFi.hostname(DeviceId::get());
+    WiFi.hostname(DeviceId::getChipId());
     #endif // ESP32
 
     WiFi.begin(WIFI_SSID,WIFI_PSWD);
@@ -301,7 +299,7 @@ void BootStandalone::_onWifiGotIp(WiFiEvent_t event, WiFiEventInfo_t info) {
   Interface::get().event.mask = IPAddress(info.got_ip.ip_info.netmask.addr);
   Interface::get().event.gateway = IPAddress(info.got_ip.ip_info.gw.addr);
   Interface::get().eventHandler(Interface::get().event);
-  MDNS.begin(DeviceId::get());
+  MDNS.begin(DeviceId::getChipId());
 
   _mqttConnect();
 }
@@ -316,7 +314,7 @@ void BootStandalone::_onWifiGotIp(const WiFiEventStationModeGotIP& event) {
   Interface::get().event.gateway = event.gw;
   Interface::get().eventHandler(Interface::get().event);
 #if SMARTIOT_MDNS
-  MDNS.begin(DeviceId::get());
+  MDNS.begin(DeviceId::getChipId());
 #endif
 
   _mqttConnect();
@@ -364,7 +362,7 @@ void BootStandalone::_mqttConnect() {
 bool BootStandalone::_subscribe(){
   uint16_t packetId;
   String baseTopic_topic(DEFAULT_MQTT_BASE_TOPIC);
-  String device_id_topic(DeviceId::get());
+  String device_id_topic(DeviceId::getChipId());
 
   Interface::get().getLogger() << F(" 〽 Start subscribing to SmartIoT MQTT topics: ") << endl;
 
@@ -486,51 +484,45 @@ bool SmartIotInternals::BootStandalone::__handleOTAUpdates(char* topic, char* pa
     _mqttTopicLevelsCount ==  4 // it only a firmware info.
     && strcmp_P(_mqttTopicLevels.get()[0], PSTR("setup")) == 0
     && strcmp_P(_mqttTopicLevels.get()[1], PSTR("ota")) == 0
-    && strcmp(_mqttTopicLevels.get()[2], Interface::get().firmware.name) == 0
+    && strcmp(_mqttTopicLevels.get()[2], DeviceId::getChipId()) == 0
     && strcmp_P(_mqttTopicLevels.get()[3], PSTR("firmware")) == 0
     ){
     Interface::get().getLogger() << F("Receiving OTA info") << endl;
-    if (!Interface::get().getConfig().get().ota.enabled) {
-      Interface::get().getLogger() << F("✖ Ignore it, OTA not enabled") << endl;
+
+    DynamicJsonDocument otaJson (JSON_OBJECT_SIZE(9)); 
+    DeserializationError error = deserializeJson(otaJson, payload);
+    if (error) {
+      Interface::get().getLogger() << F("✖ Bad OTA data format: ") << error.c_str() << endl;
       return true;
-    } else {
-      DynamicJsonDocument otaJson (JSON_OBJECT_SIZE(9)); 
-      DeserializationError error = deserializeJson(otaJson, payload);
-      if (error) {
-        Interface::get().getLogger() << F("✖ Bad OTA data format: ") << error.c_str() << endl;
-        return true;
-      }
-      const char* fw_version = otaJson[F("version")];
-      const char* fw_ota = otaJson[F("md5")];
-      if(strcmp(fw_version, Interface::get().firmware.version) != 0) {
-        Interface::get().getLogger() << F("> New firware version received: ") << fw_version << F(" subscrib to it") << endl;
-        _firmwareMqttTopic(PSTR("setup/ota"));
-        strcat_P(_mqttTopic.get(), PSTR("/"));
-        strcat(_mqttTopic.get(), fw_ota);
-        Interface::get().getMqttClient().subscribe(_mqttTopic.get(), 1);
-        Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
-
-
-      } else {
-        Interface::get().getLogger() << F("✖ Ignore it, already uptodate") << endl;
-      }
-      return true;    
     }
+
+    const char* fw_name = otaJson[F("name")];
+    const char* fw_version = otaJson[F("version")];
+    const char* fw_ota = otaJson[F("md5")];
+
+    Interface::get().getLogger() << F("> New firware  received: ") << fw_name << F(":") << fw_version << F(" subscrib to it") << endl;
+    _prefixMqttTopic();
+    strcat_P(_mqttTopic.get(), topic);
+    strcat_P(_mqttTopic.get(), PSTR("/"));
+    strcat(_mqttTopic.get(), fw_name);
+    strcat_P(_mqttTopic.get(), PSTR("/firmware"));
+    strcat_P(_mqttTopic.get(), PSTR("/"));
+    strcat(_mqttTopic.get(), fw_ota);
+    Interface::get().getMqttClient().subscribe(_mqttTopic.get(), 1);
+    Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
+
+
+    return true;
   }
   else if (
     _mqttTopicLevelsCount ==  5
     && strcmp_P(_mqttTopicLevels.get()[0], PSTR("setup")) == 0
     && strcmp_P(_mqttTopicLevels.get()[1], PSTR("ota")) == 0
-    && strcmp(_mqttTopicLevels.get()[2], Interface::get().firmware.name) == 0
+    // level 3 is fw name
     && strcmp_P(_mqttTopicLevels.get()[3], PSTR("firmware")) == 0
     ) {
     if (index == 0) {
       Interface::get().getLogger() << F("Receiving OTA payload") << endl;
-      if (!Interface::get().getConfig().get().ota.enabled) {
-        _publishOtaStatus(403);  // 403 Forbidden
-        Interface::get().getLogger() << F("✖ Aborting, OTA not enabled") << endl;
-        return true;
-      }
 
       char* firmwareMd5 = _mqttTopicLevels.get()[4];
       if (!Helpers::validateMd5(firmwareMd5)) {
@@ -703,7 +695,7 @@ bool SmartIotInternals::BootStandalone::__handleConfig(char * topic, char * payl
     _mqttTopicLevelsCount >= 4
     && strcmp_P(_mqttTopicLevels.get()[0], PSTR("setup")) == 0
     && strcmp_P(_mqttTopicLevels.get()[1], PSTR("config")) == 0
-    && ( (strcmp(_mqttTopicLevels.get()[2], DeviceId::get()) == 0
+    && ( (strcmp(_mqttTopicLevels.get()[2], DeviceId::getChipId()) == 0
           && strcmp_P(_mqttTopicLevels.get()[3], PSTR("set")) == 0)
       )
     ) {
