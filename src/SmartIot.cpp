@@ -399,6 +399,20 @@ void SmartIotClass::doDeepSleep(uint64_t time_us) {
   esp_sleep_enable_timer_wakeup(time_us);
   esp_deep_sleep_start();
 }
+void SmartIotClass::doDeepSleep(gpio_num_t wakeupPin, int logicLevel) {
+  Interface::get().getLogger() << F("💤 Device is deep sleeping...") << endl;
+  Serial.flush();
+
+  esp_sleep_enable_ext0_wakeup(wakeupPin, logicLevel);
+  esp_deep_sleep_start();
+}
+void SmartIotClass::doDeepSleep(uint64_t pinMask, esp_sleep_ext1_wakeup_mode_t mode) {
+  Interface::get().getLogger() << F("💤 Device is deep sleeping...") << endl;
+  Serial.flush();
+
+  esp_sleep_enable_ext1_wakeup(pinMask, mode);
+  esp_deep_sleep_start();
+}
 #elif defined(ESP8266)
 void SmartIotClass::doDeepSleep(uint64_t time_us, RFMode mode) {
   Interface::get().getLogger() << F("💤 Device is deep sleeping...") << endl;

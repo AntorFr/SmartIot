@@ -21,6 +21,7 @@ SmartIotOwTemp::~SmartIotOwTemp() {
 }
 
 void SmartIotOwTemp::setup() {
+    SmartIotNode::setup();
     Interface::get().getLogger() << F("• Setup OwTemp node ") << getName() << endl;
     _ds= OneWire(_pin);
     _sensors = DallasTemperature(&_ds);

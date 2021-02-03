@@ -112,7 +112,7 @@ class SmartIotNode {
   }
 
  protected:
-  virtual void setup() {}
+  virtual void setup();
   virtual void loop() {}
   virtual void onReadyToOperate() {}
   virtual void stop() {}
@@ -153,6 +153,9 @@ class SmartIotNode {
   //<
 
   bool runLoopDisconnected;
+
+  std::unique_ptr<char[]> _mqttTopic;
+
 
   std::vector<SmartIotInternals::Property*> _properties;
   SmartIotInternals::NodeInputHandler _inputHandler;

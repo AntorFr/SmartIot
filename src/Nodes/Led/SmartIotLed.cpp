@@ -8,6 +8,8 @@ SmartIotLed::SmartIotLed(const char* id,const char* name, const char* type)
     :SmartIotNode(id,name,type)
     ,_milli_amps(4000)
     ,_fps(60)
+    ,_state(true)
+    ,_brightness(100)
     {
     setRunLoopDisconnected(true);
     setHandler([=](const String& json){
@@ -21,6 +23,8 @@ void SmartIotLed::begin(){
 
 
 void SmartIotLed::setup(){
+    SmartIotNode::setup();
+    
     FastLED.setDither(false);
     FastLED.setCorrection(TypicalLEDStrip);
     //FastLED.setMaxPowerInVoltsAndMilliamps(5, _milli_amps);
@@ -46,10 +50,13 @@ void SmartIotLed::stop(){
 }
 
 void SmartIotLed::setBrightness(uint8_t scale){
-    FastLED.setBrightness(scale);
+    _brightness = scale;
+    FastLED.setBrightness(dim8_raw(_brightness*255/100));
+    FastLED.show();
+
 }
 uint8_t SmartIotLed::getBrightness(){
-    return FastLED.getBrightness();
+    return _brightness;
 }
 
 
@@ -64,6 +71,7 @@ bool SmartIotLed::ledCmdHandler(const SmartIotRange& range, const String& value)
         Interface::get().getLogger() << F("ledC node, handle action: ") << value << endl;
     #endif // DEBUG
     int intValue = atoi(value.c_str());
+    if(intValue<0 || intValue>100) return false; // brigthness between 0 - 100
 
     if (intValue == 0) { 
         turnOff();
@@ -90,10 +98,9 @@ bool SmartIotLed::ledCmdHandler(const String& json){
     if(data.containsKey("state")) {
         if(data["state"]=="OFF"){
             turnOff();
-            setBrightness(0);
         } else if (data["state"]=="ON") {
             turnOn();
-            if(getBrightness()==0) {setBrightness(255);}
+            if(getBrightness()==0) {setBrightness(100);}
         }
     }
     //serializeJsonPretty(data, Serial); 
@@ -121,7 +128,7 @@ void SmartIotLed::ledObjCmdHandler(ArduinoJson::JsonObject& data,LedObject* obj)
         }
     }
     if(data.containsKey("speed")){ obj->setSpeed(data["speed"].as<uint8_t>()); }
-    if(data.containsKey("rgb")){ obj->setColor(data["rgb"]["r"],data["rgb"]["g"],data["rgb"]["b"]);}  
+    if(data.containsKey("color")){ obj->setColor(data["color"]["r"],data["color"]["g"],data["color"]["b"]);}  
 }
 
 void SmartIotLed::loop(){
@@ -198,12 +205,14 @@ bool SmartIotLed::loadNodeConfig(ArduinoJson::JsonObject& data){
 }
 
 void SmartIotLed::turnOff(){
+    _state = false;
     fill_solid(_leds,_nbLed, CRGB::Black);
     FastLED.show();
     _display.detach();
 }
 
 void SmartIotLed::turnOn(){
+    _state = true;
     _display.attach_ms_scheduled(1000/_fps,std::bind(&SmartIotLed::display, this));
 }
 
@@ -215,7 +224,7 @@ void SmartIotLed::_publishStatus(){
     data[F("fps")]=_fps;
     data[F("nb_led")]=_nbLed;
     data[F("brightness")]= getBrightness();
-    data[F("state")]= getBrightness()>0?F("ON"):F("OFF");
+    data[F("state")]= _state?F("ON"):F("OFF");
 
     if (_nbObjects()<= 1){
         LedObject* iLedObj = objects.front();

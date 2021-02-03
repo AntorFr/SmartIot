@@ -29,6 +29,7 @@ SmartIotDoorCmd::~SmartIotDoorCmd() {
 }
 
 void SmartIotDoorCmd::setup() {
+    SmartIotNode::setup();
     Interface::get().getLogger() << F("• Setup Door Command node ") << getName() << endl;
 
     _switchOpen.notSettable();

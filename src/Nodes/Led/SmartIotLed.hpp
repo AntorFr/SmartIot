@@ -66,6 +66,8 @@ class SmartIotLed : public SmartIotNode  {
         Ticker _display;
         uint16_t _nbLed;
         CRGB* _leds;
+        bool _state;
+        uint8_t _brightness;
 
 };
 

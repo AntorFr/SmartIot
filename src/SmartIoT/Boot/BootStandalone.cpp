@@ -407,6 +407,8 @@ void BootStandalone::_onMqttDisconnected(AsyncMqttClientDisconnectReason reason)
 
 void BootStandalone::_onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
   if (total == 0) return;  // no empty message possible
+  if(_flaggedForReboot && Interface::get().reset.idle) return; //don't handle message when rebooting
+
 
   if (index == 0) {
     // Copy the topic

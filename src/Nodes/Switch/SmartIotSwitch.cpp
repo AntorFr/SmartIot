@@ -17,6 +17,7 @@ SmartIotSwitch::~SmartIotSwitch() {
 }
 
 void SmartIotSwitch::setup() {
+    SmartIotNode::setup();
     Interface::get().getLogger() << F("• Setup Switch node ") << getName() << endl;
 }
 

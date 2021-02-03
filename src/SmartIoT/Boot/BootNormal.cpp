@@ -306,7 +306,6 @@ void BootNormal::_endOtaUpdate(bool success, uint8_t update_error) {
     Interface::get().getLogger() << F("Triggering OTA_SUCCESSFUL event...") << endl;
     Interface::get().event.type = SmartIotEventType::OTA_SUCCESSFUL;
     Interface::get().eventHandler(Interface::get().event);
-
     _publishOtaStatus(200);  // 200 OK
     _flaggedForReboot = true;
   } else {
@@ -700,6 +699,7 @@ void BootNormal::_onMqttDisconnected(AsyncMqttClientDisconnectReason reason) {
 
 void BootNormal::_onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
   if (total == 0) return;  // no empty message possible
+  if(_flaggedForReboot && Interface::get().reset.idle) return; //don't handle message when rebooting
 
   if (index == 0) {
     // Copy the topic
@@ -835,7 +835,6 @@ bool SmartIotInternals::BootNormal::__handleOTAUpdates(char* topic, char* payloa
         strcat(_mqttTopic.get(), fw_ota);
         Interface::get().getMqttClient().subscribe(_mqttTopic.get(), 1);
         Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
-
 
       } else {
         Interface::get().getLogger() << F("✖ Ignore it, already uptodate") << endl;

@@ -89,6 +89,7 @@ SmartIotNode::SmartIotNode(const char* id, const char* name, const char* type, c
 , _settable(false)
 , _properties()
 , _retained(false)
+, _mqttTopic(nullptr)
 , _inputHandler(inputHandler) {
   if (strlen(id) + 1 > MAX_NODE_ID_LENGTH || strlen(type) + 1 > MAX_NODE_TYPE_LENGTH) {
     Helpers::abort(F("✖ SmartIotNode(): either the id or type string is too long"));
@@ -110,22 +111,22 @@ uint16_t SmartIotNode::send(const JsonObject& data) {
   send(value);
 }
 
+void SmartIotNode::setup() {
+  _mqttTopic = std::unique_ptr<char[]>(new char[strlen(Interface::get().getConfig().get().mqtt.baseTopic) + strlen(_name) + 1 + strlen(_type) + 1]);
+
+  strcpy(_mqttTopic.get(), Interface::get().getConfig().get().mqtt.baseTopic);
+  strcat(_mqttTopic.get(), _type);
+  strcat_P(_mqttTopic.get(), PSTR("/"));
+  strcat(_mqttTopic.get(), _name);
+}
+
 uint16_t SmartIotNode::send(const String& value) {
   if (!Interface::get().ready) {
     Interface::get().getLogger() << F("✖ send(): impossible now") << endl;
     return 0;
   }
 
-  char* topic = new char[strlen(Interface::get().getConfig().get().mqtt.baseTopic) + strlen(_name) + 1 + strlen(_type) + 1]; 
-  
-  strcpy(topic, Interface::get().getConfig().get().mqtt.baseTopic);
-  strcat(topic, _type);
-  strcat_P(topic, PSTR("/"));
-  strcat(topic, _name);
-
-  uint16_t packetId = Interface::get().getMqttClient().publish(topic, 1, _retained, value.c_str());
-
-  delete[] topic;
+  uint16_t packetId = Interface::get().getMqttClient().publish(_mqttTopic.get(), 1, _retained, value.c_str());
 
   return packetId;
 }
