@@ -15,6 +15,7 @@ SmartIotLed::SmartIotLed(const char* id,const char* name, const char* type)
     setHandler([=](const String& json){
         return this->SmartIotLed::ledCmdHandler(json);
         });
+    setRetained(true);
 }
 
 void SmartIotLed::begin(){
