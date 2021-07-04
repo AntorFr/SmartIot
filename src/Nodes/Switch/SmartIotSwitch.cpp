@@ -6,6 +6,7 @@ using namespace SmartIotInternals;
 SmartIotSwitch::SmartIotSwitch(const char* id, const char* name, const char* type, const NodeInputHandler& inputHandler)
     :SmartIotNode(id,name,type,inputHandler)
     ,_pin(0)
+    ,_state(false)
     ,_debounceFlag(false)
     ,_numberImpulse(0) {
     setHandler([=](const String& json){
@@ -160,7 +161,12 @@ void SmartIotSwitch::_publishStatus(){
         data[F("state")]=F("OFF");  
     }
 
-
     send(data);
+}
 
+void SmartIotSwitch::publish_stats(){
+    if(isSettable()) {
+        Interface::get().getLogger() << F("   > Publish ") << getName() << F("node stats") << endl;
+        _publishStatus();
+    }
 }

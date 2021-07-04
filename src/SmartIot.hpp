@@ -25,7 +25,16 @@
 #include "StreamingOperator.hpp"
 
 // Define DEBUG for debug
-#ifdef ESP32
+
+#if defined(ARDUINO_ESP8266_WEMOS_D1MINIPRO)
+  #define _ESP "-d1pro"
+#elif defined(ARDUINO_ESP8266_WEMOS_D1MINI) || defined(ARDUINO_ESP8266_WEMOS_D1MINILITE)
+  #define _ESP "-d1"
+#elif defined(ARDUINO_ESP8266_SONOFF_BASIC)
+  #define _ESP "-sonoffbasic"
+#elif defined(ARDUINO_ESP8266_SONOFF_SV)
+  #define _ESP "-sonoffsv"
+#elif defined(ESP32)
   #define _ESP "-esp32"
 #elif defined(ESP8266)
   #define _ESP "-esp8266"

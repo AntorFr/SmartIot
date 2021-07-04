@@ -108,7 +108,7 @@ SmartIotNode::~SmartIotNode() {
 uint16_t SmartIotNode::send(const JsonObject& data) {
   String value;
   serializeJson(data, value);
-  send(value);
+  return send(value);
 }
 
 void SmartIotNode::setup() {

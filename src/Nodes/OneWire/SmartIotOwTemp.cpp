@@ -82,7 +82,7 @@ void SmartIotOwTemp::_publishSensor(OwTempDevice* device) {
     DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(3)); 
     JsonObject data = jsonBuffer.to<JsonObject>();
 
-    data["adress"]=device->getAddress();
+    data["address"]=device->getAddress();
     data["temp"]=device->getTempC();
 
     send(data);

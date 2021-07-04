@@ -323,7 +323,7 @@ void SmartIotDoorCmd::_startMove(uint8_t move){
         default:
             //wrong move
             return;          
-    } 
+    }
     _publishStatus();
     if(_pinLight!=0){
         _switchlight.impulse((_lightDuration*1000));
@@ -398,12 +398,6 @@ void SmartIotDoorCmd::_publishStatus(){
         Interface::get().getLogger() << F("  - sensor: ") << _sensorActivated << endl;
     #endif // DEBUG
 
-    send(data);
+    //send(data);
 
 }
-
-
-
-
-
-

@@ -23,6 +23,7 @@ class SmartIotSwitch : public SmartIotNode  {
     virtual void setup() override;
     virtual void loop() override;
     virtual void onReadyToOperate() override;
+    void publish_stats() override;
     virtual bool loadNodeConfig(ArduinoJson::JsonObject& data) override;
 
     private:

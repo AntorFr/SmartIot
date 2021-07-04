@@ -129,17 +129,17 @@ void BootNormal::loop() {
   }
 
   if(_mqttReconnectTimer.isActive()){
+    if (_mqttReconnectTimer.reachMax()){
+      Interface::get().getLogger() << F("↕ too many mqtt connect attent > reset device ...") << endl;
+      _flaggedForReboot = true;
+      return;
+    }
     if (_mqttReconnectTimer.check()) {
       Interface::get().getLogger() << F("↕ _mqttReconnectTimer up ...") << endl;
       _mqttConnect();
       return;
     } 
-    if (_mqttReconnectTimer.reachMax()){
-      Interface::get().getLogger() << F("↕ too many mqtt connect attent > reset device ...") << endl;
-      _flaggedForReboot = true;
-    }
   }
-
 
   for (SmartIotNode* iNode : SmartIotNode::nodes) {
       if (!_otaOngoing && (iNode->runLoopDisconnected)) iNode->loop();
@@ -232,10 +232,20 @@ void BootNormal::_publish_stats(){
     serializeJson(statsData,(char*) _jsonMessageBuffer.get(),JSON_MSG_BUFFER);
 
     uint16_t statsPacketId = Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("log/heartbeat")), 1, false, _jsonMessageBuffer.get());
-    Interface::get().getLogger() << F("  Stats published at: ") << _mqttTopic.get() << endl;
-    if (statsPacketId != 0) _statsTimer.tick();
-    Interface::get().event.type = SmartIotEventType::SENDING_STATISTICS;
-    Interface::get().eventHandler(Interface::get().event);
+    
+    if (statsPacketId != 0) {
+      _statsTimer.tick();
+      Interface::get().getLogger() << F("  Stats Published at: ") << _mqttTopic.get() << endl;
+      Interface::get().event.type = SmartIotEventType::SENDING_STATISTICS;
+      Interface::get().eventHandler(Interface::get().event);
+    } else {
+      Interface::get().getLogger() << F("  Stats Published at: ") << _mqttTopic.get() << endl;
+      Interface::get().getLogger() << F("✖ impossible to publish stat") << endl;
+    }
+
+    for (SmartIotNode* iNode : SmartIotNode::nodes) {
+      iNode->publish_stats();
+    }
 }
 
 char* BootNormal::_deviceMqttTopic(PGM_P topic,bool set) {
@@ -354,6 +364,7 @@ void BootNormal::_endOtaUpdate(bool success, uint8_t update_error) {
     Interface::get().getLogger() << F("Triggering OTA_FAILED event...") << endl;
     Interface::get().event.type = SmartIotEventType::OTA_FAILED;
     Interface::get().eventHandler(Interface::get().event);
+    _flaggedForReboot = true;
   }
   _otaOngoing = false;
 }
