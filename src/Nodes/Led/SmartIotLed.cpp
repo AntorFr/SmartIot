@@ -239,5 +239,8 @@ void SmartIotLed::_publishStatus(){
     send(data);
 
     getProperty("state")->send(String(getBrightness()));
+}
 
+void SmartIotLed::publish_stats(){
+    _publishStatus();
 }

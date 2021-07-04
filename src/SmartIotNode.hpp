@@ -118,6 +118,7 @@ class SmartIotNode {
   virtual void stop() {}
   virtual bool handleInput(const String& value);
   virtual bool loadNodeConfig(ArduinoJson::JsonObject& data);
+  virtual void publish_stats() {}
 
   static std::vector<SmartIotNode*> nodes;
 

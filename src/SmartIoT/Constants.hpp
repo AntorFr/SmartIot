@@ -11,7 +11,7 @@
 #endif
 
 namespace SmartIotInternals {
-  const char SMARTIOT_VERSION[] = "4.0.0";
+  const char SMARTIOT_VERSION[] = "4.2.0";
 
   const IPAddress ACCESS_POINT_IP(192, 168, 3, 1);
 

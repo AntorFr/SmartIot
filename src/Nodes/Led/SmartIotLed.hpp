@@ -51,6 +51,7 @@ class SmartIotLed : public SmartIotNode  {
         void stop() override;
         virtual bool loadNodeConfig(ArduinoJson::JsonObject& data) override;
         //void onReadyToOperate();
+        void publish_stats() override;
         uint8_t _nbObjects(){ return static_cast<uint8_t>(SmartIotLed::objects.size());} 
         
 
