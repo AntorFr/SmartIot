@@ -1,0 +1,57 @@
+{
+  "name": "SmartIoT",
+  "version": "2.0.0",
+  "keywords": "iot, home, automation, mqtt, esp8266, async, sensor",
+  "description": "This is a personal project for managing an a commun framwork all my esp32/esp8266 home devices. Work is based on Marvin Roger works of SmartIot",
+  "homepage": "https://github.com/AntorFr/SmartIot",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Sebastien Berard",
+      "url": "https://www.antor.fr",
+      "maintainer": true
+    },
+    {
+      "name": "Marvin Roger",
+      "url": "https://www.marvinroger.fr",
+      "maintainer": true
+    },
+    {
+      "name": "Ian Hubbertz",
+      "url": "https://github.com/euphi",
+      "maintainer": true
+    }
+  ],
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/SmartIoTiot/SmartIoT-esp8266.git"
+  },
+  "frameworks": "arduino",
+  "platforms": [
+    "espressif8266",
+    "espressif32"
+  ],
+  "dependencies": [
+    {
+      "name": "ArduinoJson",
+      "version": "^6.11.4"
+    },
+    {
+      "name": "AsyncMqttClient",
+      "version": "^0.8.0"
+    },
+    {
+      "name": "Bounce2",
+      "version": "^2.1.0"
+    }
+  ],
+  "export": {
+    "include": [
+      "LICENSE",
+      "keywords.txt",
+      "src/*",
+      "examples/*"
+    ]
+  }
+}
