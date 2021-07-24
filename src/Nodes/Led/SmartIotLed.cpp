@@ -214,6 +214,9 @@ void SmartIotLed::turnOff(){
 
 void SmartIotLed::turnOn(){
     _state = true;
+    for (LedObject* iObj : SmartIotLed::objects) {
+        iObj->initPattern();
+    }
     _display.attach_ms_scheduled(1000/_fps,std::bind(&SmartIotLed::display, this));
 }
 
