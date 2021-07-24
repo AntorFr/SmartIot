@@ -19,7 +19,6 @@ LedObject::LedObject(const uint8_t firstPos,const uint8_t nbLed, const char* nam
         _leds = new CRGB [_nbLed];
         fill_solid(_leds,_nbLed, CRGB::Black);
 
-
         _patterns["off"]= [](LedObject* ledObj) -> LedPattern* { return new OffPattern(ledObj); };
         _patterns["color"]= [](LedObject* ledObj) -> LedPattern* { return new ColorPattern(ledObj); };
         _patterns["blink"]= [](LedObject* ledObj) -> LedPattern* { return new BlinkPattern(ledObj); };
@@ -66,21 +65,27 @@ LedObject::LedObject(const uint8_t firstPos,const uint8_t nbLed, const char* nam
         _patterns["cloud2Twinkles"]= [](LedObject* ledObj) -> LedPattern* { return new TwinkleFoxPattern(ledObj,CloudColors_p); };
         _patterns["oceanTwinkles"]= [](LedObject* ledObj) -> LedPattern* { return new TwinkleFoxPattern(ledObj,OceanColors_p); };
 
+        //default pattern on boot
+        _pattern = "color";
+        _curentPattern = _patterns["color"](this);
+
         _autoplayList = {
                         "confetti","star","pride","sinelon","cloudTwinkles","rainbowTwinkles","snowTwinkles","incandescentTwinkles","redGreenWhiteTwinkles","hollyTwinkles","redWhiteTwinkles",
                         "blueWhiteTwinkles","fairyLightTwinkles","snow2Twinkles","iceTwinkles","retroC9Twinkles","partyTwinkles","forestTwinkles","lavaTwinkles","fireTwinkles","cloud2Twinkles","oceanTwinkles"
                         };
 
+
+
 }
 
 void LedObject::setColor(CRGB color){
      _color=color;
-     if (_curentPattern) {_curentPattern->init();}
+     initPattern();
 }
 
 void LedObject::setSpeed(uint8_t speed) {
     _speed = speed;
-    if (_curentPattern) {_curentPattern->init();}
+    initPattern();
 }
 
 void LedObject::dimAll(byte value)
@@ -106,7 +111,7 @@ void LedObject::setPattern(String pattern) {
         delete _curentPattern;
         _curentPattern = _patterns[_pattern](this);
         Interface::get().getLogger() << F("> setPattern: ") << pattern.c_str() << F(" done") << endl;
-        if (_curentPattern) {_curentPattern->init();}
+        initPattern();
     } else {
         Interface::get().getLogger() << F("✖ setPattern failed, Pattern ") << pattern.c_str() << F(" does not exist") << endl;}
     }
