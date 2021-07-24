@@ -25,6 +25,7 @@ class LedObject {
         CRGBPalette16 getTargetPalette() const {return _gTargetPalette;}
         void setSpeed(uint8_t speed);
         void setPattern(String motif);
+        void initPattern();
         void setAutoPlay(bool autoplay, uint8_t duration = 30);
         String getMotif() {return _pattern;}
         const char* getName() const {return _name;}
