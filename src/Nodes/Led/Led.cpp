@@ -88,6 +88,10 @@ void LedObject::setSpeed(uint8_t speed) {
     initPattern();
 }
 
+void LedObject::initPattern(){
+   if (_curentPattern) {_curentPattern->init();} 
+}
+
 void LedObject::dimAll(byte value)
 {
     for (int i = 0; i < _nbLed; i++) {
