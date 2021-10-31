@@ -58,8 +58,8 @@ uint16_t Property::send(const String& value) {
     Interface::get().getLogger() << F("✖ send(): impossible now") << endl;
     return 0;
   }
-
-  char* topic = new char[strlen(Interface::get().getConfig().get().mqtt.baseTopic) + strlen(_node->getName()) + 1 + strlen(_node->getType()) + 1 + strlen(getName())]; 
+  
+  char* topic = new char[strlen(Interface::get().getConfig().get().mqtt.baseTopic) + 1 + strlen(_node->getName()) + 1 + strlen(_node->getType()) + 1 + strlen(getName())+5]; 
   
   strcpy(topic, Interface::get().getConfig().get().mqtt.baseTopic);
   strcat(topic, _node->getType());

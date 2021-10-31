@@ -140,7 +140,7 @@ bool SmartIotSwitch::SwitchHandler(const String& json){
     }
     if(data.containsKey("state")) {
         #ifdef DEBUG
-            Interface::get().getLogger() << F("Switch node, handle state: ") << data["state"] << endl;
+            Interface::get().getLogger() << F("Switch node, handle state: ") << data["state"].as<String>()  << endl;
         #endif // DEBUG
 
         if(data["state"]=="OFF"){ turnOff();} 
