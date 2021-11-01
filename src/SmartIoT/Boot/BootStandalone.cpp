@@ -504,11 +504,9 @@ bool SmartIotInternals::BootStandalone::__handleOTAUpdates(char* topic, char* pa
 
     Interface::get().getLogger() << F("> New firware  received: ") << fw_name << F(":") << fw_version << F(" subscrib to it") << endl;
     _prefixMqttTopic();
-    strcat_P(_mqttTopic.get(), topic);
-    strcat_P(_mqttTopic.get(), PSTR("/"));
+    strcat_P(_mqttTopic.get(), PSTR("log/ota/"));
     strcat(_mqttTopic.get(), fw_name);
-    strcat_P(_mqttTopic.get(), PSTR("/firmware"));
-    strcat_P(_mqttTopic.get(), PSTR("/"));
+    strcat_P(_mqttTopic.get(), PSTR("/firmware/"));
     strcat(_mqttTopic.get(), fw_ota);
     Interface::get().getMqttClient().subscribe(_mqttTopic.get(), 1);
     Interface::get().getLogger() << F("  ✔ ") << _mqttTopic.get() << endl;
