@@ -29,7 +29,7 @@ LedObject::LedObject(const uint8_t firstPos,const uint8_t nbLed, const char* nam
         _patterns["k2000"]= [](LedObject* ledObj) -> LedPattern* { return new K2000Pattern(ledObj); };
         _patterns["starTrek"]= [](LedObject* ledObj) -> LedPattern* { return new ComputerPattern(ledObj); };
 
-           //Sound
+        //Sound
         _patterns["rainbow sound"]= [](LedObject* ledObj) -> LedPattern* { return new RainbowSoundPattern(ledObj); };
 
         _patterns["confetti"]= [](LedObject* ledObj) -> LedPattern* { return new ConfettiPattern(ledObj); };
