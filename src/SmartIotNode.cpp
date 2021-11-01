@@ -112,7 +112,7 @@ uint16_t SmartIotNode::send(const JsonObject& data) {
 }
 
 void SmartIotNode::setup() {
-  _mqttTopic = std::unique_ptr<char[]>(new char[strlen(Interface::get().getConfig().get().mqtt.baseTopic) + strlen(_name) + 1 + strlen(_type) + 1]);
+  _mqttTopic = std::unique_ptr<char[]>(new char[strlen(Interface::get().getConfig().get().mqtt.baseTopic) + strlen(_name) + 1 + strlen(_type) + 10]);
 
   strcpy(_mqttTopic.get(), Interface::get().getConfig().get().mqtt.baseTopic);
   strcat(_mqttTopic.get(), _type);
