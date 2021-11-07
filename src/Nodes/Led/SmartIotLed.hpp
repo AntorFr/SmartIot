@@ -15,7 +15,7 @@
 #include "Led.hpp"
 
 
-//using namespace SmartIotInternals;
+using namespace SmartIotInternals;
 class LedObject;
 
 class SmartIotLed : public SmartIotNode  {
@@ -38,12 +38,12 @@ class SmartIotLed : public SmartIotNode  {
 
     template<uint8_t PIN,EOrder RGB_ORDER = GRB> 
     void addLeds(){
-        begin();
-        FastLED.addLeds<WS2812,PIN, RGB_ORDER>(_leds, _nbLed); //GRB RGB //<NEOPIXEL,DATA_PIN, GRB>
-        FastLED.show();
+        if (Interface::get().bootMode == SmartIotBootMode::NORMAL){ //config does not exist if boot mode is not normal.
+            FastLED.addLeds<WS2812,PIN, RGB_ORDER>(_leds, _nbLed); //GRB RGB //<NEOPIXEL,DATA_PIN, GRB>
+            begin();
+            FastLED.show();
+        }
     }
-
-
 
     protected:
         void setup() override;

@@ -19,6 +19,7 @@ namespace SmartIotInternals {
             virtual void init() {};
             virtual void display() {};
             void addGlitter(fract8 chanceOfGlitter);
+            void addPowerCut(fract16 chanceOfPowercut);
             uint8_t _nbLed;
             CRGB* _leds;
             const LedObject* _obj;

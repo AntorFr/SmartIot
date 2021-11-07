@@ -151,7 +151,7 @@ void SmartIotLed::display(){
             } 
         }
     }
-    if(show) {FastLED.show();}
+    if(show) {FastLED.show();} 
     for (LedObject* iObj : SmartIotLed::objects) {iObj->showed();}
 }
 
@@ -207,9 +207,9 @@ bool SmartIotLed::loadNodeConfig(ArduinoJson::JsonObject& data){
 
 void SmartIotLed::turnOff(){
     _state = false;
+    _display.detach();
     fill_solid(_leds,_nbLed, CRGB::Black);
     FastLED.show();
-    _display.detach();
 }
 
 void SmartIotLed::turnOn(){

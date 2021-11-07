@@ -17,6 +17,13 @@ void LedPattern::addGlitter(fract8 chanceOfGlitter)
   }
 }
 
+void LedPattern::addPowerCut(fract16 chanceOfPowercut) 
+{
+  if( random16() < chanceOfPowercut) {
+    fill_solid(_leds,_nbLed, CRGB::Black);
+  }
+}
+
 void OffPattern::init(){
     fill_solid(_leds,_nbLed, CRGB::Black); 
     show();

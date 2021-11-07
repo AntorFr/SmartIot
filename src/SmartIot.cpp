@@ -150,16 +150,20 @@ void SmartIotClass::setup() {
 
   // run selected mode
   if (_selectedSmartIotBootMode == SmartIotBootMode::NORMAL) {
+    Interface::get().bootMode = SmartIotBootMode::NORMAL;
     _boot = &_bootNormal;
     Interface::get().event.type = SmartIotEventType::NORMAL_MODE;
     Interface::get().eventHandler(Interface::get().event);
+    
 #if SMARTIOT_CONFIG
   } else if (_selectedSmartIotBootMode == SmartIotBootMode::CONFIGURATION) {
+    Interface::get().bootMode = SmartIotBootMode::CONFIGURATION;
     _boot = &_bootConfig;
     Interface::get().event.type = SmartIotEventType::CONFIGURATION_MODE;
     Interface::get().eventHandler(Interface::get().event);
 #endif
   } else if (_selectedSmartIotBootMode == SmartIotBootMode::STANDALONE) {
+    Interface::get().bootMode = SmartIotBootMode::STANDALONE;
     _boot = &_bootStandalone;
     Interface::get().event.type = SmartIotEventType::STANDALONE_MODE;
     Interface::get().eventHandler(Interface::get().event);
