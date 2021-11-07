@@ -43,7 +43,7 @@ void SmartIotLed::setup(){
 
     advertise("state").setName("state").setRetained(true).setDatatype("integer").settable([=](const SmartIotRange& range, const String& value){
         return this->ledCmdHandler(range,value);
-        });
+    });
 }
 
 void SmartIotLed::stop(){
@@ -167,13 +167,11 @@ bool SmartIotLed::loadNodeConfig(ArduinoJson::JsonObject& data){
     if(data.containsKey("fps")) {
         setFps(data["fps"]);
     }
-
     if(data.containsKey("brightness")) {
         setBrightness(data["brightness"]);
     } else {
         setBrightness(255);
     }
-
     if(!data.containsKey("objects")) {
         if (data.containsKey("nb_led")){
             LedObject* obj = createObject(0,data["nb_led"],data["node_name"]);
@@ -187,8 +185,8 @@ bool SmartIotLed::loadNodeConfig(ArduinoJson::JsonObject& data){
             Interface::get().getLogger() << F("✖ Led config invalid: nb_led is missing") << endl;
         }
     } else {
-        for (JsonPair item : data["objects"].as<JsonObject>()) {
-            JsonObject objData = item.value().as<JsonObject>();
+        for (JsonVariant item : data["objects"].as<JsonArray>()) {
+            JsonObject objData = item.as<JsonObject>();
             if (objData.containsKey("nb_led") && objData.containsKey("name") && objData.containsKey("start_led") ) {
                 LedObject* obj = createObject(objData["start_led"],objData["nb_led"],objData["name"].as<const char*>());
                 if(objData.containsKey("audio_pin")) {
