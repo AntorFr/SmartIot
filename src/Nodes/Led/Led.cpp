@@ -176,6 +176,8 @@ void LedObject::_publishStatus(ArduinoJson::JsonObject& data){
     color["r"] = _color.r;
     color["g"] = _color.g;
     color["b"] = _color.b;
-
-    data[F("volume")] = _avgVolume;
+    
+    if(_audioPin){
+        data[F("volume")] = _avgVolume;
+    }
 }

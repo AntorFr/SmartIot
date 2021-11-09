@@ -36,7 +36,7 @@ void ColorPattern::init(){
 
 void BlinkPattern::init(){
     _ticker.reset();
-    _ticker.setPeriod(100000/_obj->getSpeed());
+    _ticker.setPeriod(10000/_obj->getSpeed());
     show();
 }
 void BlinkPattern::display()

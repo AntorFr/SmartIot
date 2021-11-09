@@ -44,6 +44,9 @@ void SmartIotLed::setup(){
     advertise("state").setName("state").setRetained(true).setDatatype("integer").settable([=](const SmartIotRange& range, const String& value){
         return this->ledCmdHandler(range,value);
     });
+    advertise("speed").setName("speed").setRetained(true).setDatatype("integer").settable([=](const SmartIotRange& range, const String& value){
+        return this->SpeedCmdHandler(range,value);
+    });
 }
 
 void SmartIotLed::stop(){
@@ -60,11 +63,33 @@ uint8_t SmartIotLed::getBrightness(){
     return _brightness;
 }
 
+uint8_t SmartIotLed::getSpeed(){
+    uint32_t avgSpeed = 0;
+    for (LedObject* iObj : SmartIotLed::objects) {
+        avgSpeed+=iObj->getSpeed();
+    }
+    avgSpeed = avgSpeed/(uint8_t) (SmartIotLed::objects.size());
+    return (uint8_t) avgSpeed;
+}
 
 LedObject* SmartIotLed::createObject(const uint8_t firstPos,const uint8_t nbled,const char* name) {
     LedObject* obj = new LedObject(firstPos,nbled,name);
     objects.push_back(obj);
     return obj;
+}
+
+bool SmartIotLed::SpeedCmdHandler(const SmartIotRange& range, const String& value){
+    #ifdef DEBUG
+        Interface::get().getLogger() << F("Speed received, handle action: ") << value << endl;
+    #endif // DEBUG
+    uint8_t intValue = atoi(value.c_str());
+    if(intValue<=0 || intValue>100) return false; // speed between 1 - 100
+
+    for (LedObject* iObj : SmartIotLed::objects) {
+        iObj->setSpeed(intValue);
+    }
+    _publishStatus();
+    return true;
 }
 
 bool SmartIotLed::ledCmdHandler(const SmartIotRange& range, const String& value){
@@ -219,7 +244,7 @@ void SmartIotLed::turnOn(){
 }
 
 void SmartIotLed::_publishStatus(){
-    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(6) + _nbObjects() * JSON_OBJECT_SIZE(6)); 
+    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(7) + _nbObjects() * JSON_OBJECT_SIZE(11)); 
     JsonObject data = jsonBuffer.to<JsonObject>();
 
     data[F("milli_amps")]=_milli_amps;
@@ -232,6 +257,7 @@ void SmartIotLed::_publishStatus(){
         LedObject* iLedObj = objects.front();
         iLedObj->_publishStatus(data);
     } else {
+        data[F("speed")] = getSpeed();
         for (LedObject* iLedObj : objects){
             JsonObject objData = data.createNestedObject(iLedObj->getName());
             iLedObj->_publishStatus(objData);
@@ -240,6 +266,7 @@ void SmartIotLed::_publishStatus(){
     send(data);
 
     getProperty("state")->send(String(getBrightness()));
+    getProperty("speed")->send(String(getSpeed()));
 }
 
 void SmartIotLed::publish_stats(){
