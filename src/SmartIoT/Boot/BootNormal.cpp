@@ -320,7 +320,7 @@ void BootNormal::_endOtaUpdate(bool success, uint8_t update_error) {
     _flaggedForReboot = true;
   } else {
     Update.end();
-    uint8_t code;
+    uint16_t code;
     String info;
     switch (update_error) {
       case UPDATE_ERROR_SIZE:               // new firmware size is zero
@@ -928,6 +928,7 @@ bool SmartIotInternals::BootNormal::__handleOTAUpdates(char* topic, char* payloa
       }
       _otaSizeDone = 0;
       _otaSizeTotal = _otaIsBase64 ? base64_decode_expected_len(total) : total;
+
       bool success = Update.begin(_otaSizeTotal);
       if (!success) {
         // Detected error during begin (e.g. size == 0 or size > space)
@@ -1002,19 +1003,19 @@ bool SmartIotInternals::BootNormal::__handleOTAUpdates(char* topic, char* payloa
         progress.concat(F("/"));
         progress.concat(_otaSizeTotal);
 
-        static uint32_t count = 0;
-        if (count == 100) {
-          _publishOtaStatus(206, progress.c_str());  // 206 Partial Content
-          count = 0;
-        }
-        ++count;
-
         Interface::get().getLogger() << F("Receiving OTA firmware (") << progress << F(")...") << endl;
 
         Interface::get().event.type = SmartIotEventType::OTA_PROGRESS;
         Interface::get().event.sizeDone = _otaSizeDone;
         Interface::get().event.sizeTotal = _otaSizeTotal;
         Interface::get().eventHandler(Interface::get().event);
+
+        static uint32_t count = 0;
+        if (count == 100) {
+          _publishOtaStatus(206, progress.c_str());  // 206 Partial Content
+          count = 0;
+        }
+        ++count;
 
         //  Done with the update?
         if (index + len == total) {
