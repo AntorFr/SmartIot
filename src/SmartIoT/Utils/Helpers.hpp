@@ -21,3 +21,19 @@ class Helpers {
   static void byteArrayToHexString(const uint8_t* hexArray, char* hexStr, uint8_t size);
 };
 }  // namespace SmartIotInternals
+
+#if defined(ARDUINO_ARCH_ESP32)
+  #include <esp32-hal-log.h>
+#elif defined(ARDUINO_ARCH_ESP8266)
+  #if defined(DEBUG_ESP_PORT) && defined(DEBUG_SMARTIOT)
+    #define log_i(...) DEBUG_ESP_PORT.printf(__VA_ARGS__); DEBUG_ESP_PORT.print("\n")
+    #define log_e(...) DEBUG_ESP_PORT.printf(__VA_ARGS__); DEBUG_ESP_PORT.print("\n")
+    #define log_w(...) DEBUG_ESP_PORT.printf(__VA_ARGS__); DEBUG_ESP_PORT.print("\n")
+  #else
+    #define log_i(...)
+    #define log_e(...)
+    #define log_w(...)
+  #endif
+#else
+  #pragma error "No valid architecture"
+#endif
