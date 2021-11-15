@@ -504,7 +504,7 @@ bool BootNormal::_publish_advertise() {
   auto numSettings = ISmartIotSetting::settings.size();
   auto numNodes = SmartIotNode::nodes.size();
   DynamicJsonDocument jsonBuffer (
-    JSON_OBJECT_SIZE(5) + //data
+    JSON_OBJECT_SIZE(6) + //data
     JSON_OBJECT_SIZE(6) + //stats
     JSON_OBJECT_SIZE(6) + //fw
     JSON_OBJECT_SIZE(6) + //implementation
@@ -515,7 +515,7 @@ bool BootNormal::_publish_advertise() {
   JsonObject data = jsonBuffer.to<JsonObject>();
   data[F("name")]= Interface::get().getConfig().get().name;
   data[F("id")]=  Interface::get().getConfig().get().deviceId;
-  //data[F("mac")]= WiFi.macAddress().c_str();
+  data[F("mac")]= WiFi.macAddress();
 
   IPAddress localIp = WiFi.localIP();
   char localIpStr[MAX_IP_STRING_LENGTH];
