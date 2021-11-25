@@ -131,8 +131,10 @@ bool SmartIotLed::ledCmdHandler(const String& json){
     }
     //serializeJsonPretty(data, Serial); 
     if(!data.containsKey("objects")) {   
-        LedObject* obj = SmartIotLed::objects.front();
-        SmartIotLed::ledObjCmdHandler(data,obj);
+        //LedObject* obj = SmartIotLed::objects.front();
+        for (LedObject* obj : SmartIotLed::objects) {
+            SmartIotLed::ledObjCmdHandler(data,obj);
+        }
     } else {
         for (JsonPair item : data["objects"].as<JsonObject>()) {
             LedObject* obj = SmartIotLed::findObject(item.key().c_str());
