@@ -147,6 +147,13 @@ bool SmartIotLed::ledCmdHandler(const String& json){
 }
 
 void SmartIotLed::ledObjCmdHandler(ArduinoJson::JsonObject& data,LedObject* obj){
+    if(data.containsKey("state")){ 
+        if(data["state"]=="OFF"){
+            obj->turnOff();
+        } else if (data["state"]=="ON") {
+            obj->turnOn();
+        }
+    }
     if(data.containsKey("effect")){ 
         if (data["effect"] == "autoPlay") {
             obj->setAutoPlay(true);
@@ -246,7 +253,7 @@ void SmartIotLed::turnOn(){
 }
 
 void SmartIotLed::_publishStatus(){
-    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(7) + _nbObjects() * JSON_OBJECT_SIZE(11)); 
+    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(8) + _nbObjects() * JSON_OBJECT_SIZE(12)); 
     JsonObject data = jsonBuffer.to<JsonObject>();
 
     data[F("milli_amps")]=_milli_amps;

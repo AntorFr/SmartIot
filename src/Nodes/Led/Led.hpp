@@ -25,9 +25,13 @@ class LedObject {
         CRGBPalette16 getTargetPalette() const {return _gTargetPalette;}
         void setSpeed(uint8_t speed);
         void setPattern(String motif);
+        void turnOff();
+        void turnOn();
+        bool getState();
         void initPattern();
         void setAutoPlay(bool autoplay, uint8_t duration = 30);
         String getMotif() {return _pattern;}
+
         const char* getName() const {return _name;}
 
         void addAudio(uint8_t pin){_audioPin=pin; pinMode(_audioPin, INPUT);}
@@ -42,6 +46,7 @@ class LedObject {
         const char* _name;
         uint8_t _firstPos;
         uint8_t _speed;
+        bool _state;
         bool _autoplay;
         uint8_t _autoplayDuration; // seconds
         std::vector<String> _autoplayList;
