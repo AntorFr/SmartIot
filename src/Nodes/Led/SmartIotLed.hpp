@@ -63,7 +63,7 @@ class SmartIotLed : public SmartIotNode  {
         
 
     private:
-        void ledObjCmdHandler(ArduinoJson::JsonObject& data,LedObject* obj);
+        void ledObjCmdHandler(ArduinoJson::JsonObject& data,LedObject* obj,bool global = false);
 
         void _publishStatus();
 

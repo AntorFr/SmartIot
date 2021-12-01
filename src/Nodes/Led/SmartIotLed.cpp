@@ -133,7 +133,7 @@ bool SmartIotLed::ledCmdHandler(const String& json){
     if(!data.containsKey("objects")) {   
         //LedObject* obj = SmartIotLed::objects.front();
         for (LedObject* obj : SmartIotLed::objects) {
-            SmartIotLed::ledObjCmdHandler(data,obj);
+            SmartIotLed::ledObjCmdHandler(data,obj,true);
         }
     } else {
         for (JsonPair item : data["objects"].as<JsonObject>()) {
@@ -146,8 +146,9 @@ bool SmartIotLed::ledCmdHandler(const String& json){
     return true;
 }
 
-void SmartIotLed::ledObjCmdHandler(ArduinoJson::JsonObject& data,LedObject* obj){
-    if(data.containsKey("state")){ 
+void SmartIotLed::ledObjCmdHandler(ArduinoJson::JsonObject& data,LedObject* obj,bool global){
+    //turn on/off master don't turn on all segment
+    if(!global && data.containsKey("state")){ 
         if(data["state"]=="OFF"){
             obj->turnOff();
         } else if (data["state"]=="ON") {
@@ -274,7 +275,7 @@ void SmartIotLed::_publishStatus(){
     }
     send(data);
 
-    getProperty("state")->send(String(getBrightness()));
+    getProperty("state")->send(_state?String(getBrightness()):"0");
     getProperty("speed")->send(String(getSpeed()));
 }
 
