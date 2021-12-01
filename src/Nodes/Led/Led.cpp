@@ -198,7 +198,7 @@ void LedObject::_publishStatus(ArduinoJson::JsonObject& data){
     data[F("effect")] = _pattern;
     data[F("speed")] = _speed;
 
-    if(!data.containsKey("action")) {
+    if(!data.containsKey("state")) {
         data[F("state")]= getState()?F("ON"):F("OFF");
     }
     //data[F("Color")] = "#"+ String((((long)_color.r << 16) | ((long)_color.g << 8 ) | (long)_color.b),HEX);
