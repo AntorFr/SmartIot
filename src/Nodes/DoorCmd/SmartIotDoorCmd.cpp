@@ -17,8 +17,9 @@ SmartIotDoorCmd::SmartIotDoorCmd(const char* id, const char* name, const char* t
     ,_sensorActivated(true)
     ,_sensor()
     ,_status(0)
-    ,_value(0),
-    _lastMove(0) {
+    ,_value(0)
+    ,_avgMesure(0)
+    ,_lastMove(0) {
     setHandler([=](const String& json){
         return this->SmartIotDoorCmd::doorCmdHandler(json);
         });
@@ -100,7 +101,7 @@ void SmartIotDoorCmd::_statusSensor(uint16_t mesure){
         _sensorMesures.erase(_sensorMesures.begin(),_sensorMesures.begin()+_sensorMesures.size()-10);
 
         auto n = _sensorMesures.size();
-        uint16_t avgMesure = std::accumulate(_sensorMesures.begin(), _sensorMesures.end(),0) / n;
+        _avgMesure = std::accumulate(_sensorMesures.begin(), _sensorMesures.end(),0) / n;
 
         #ifdef DEBUG
             Interface::get().getLogger() << F("DoorCmd sensor avg value: ") << avgMesure << endl;
@@ -113,10 +114,10 @@ void SmartIotDoorCmd::_statusSensor(uint16_t mesure){
 
 
 
-        if (avgMesure >= 200) {
+        if (_avgMesure >= 200) {
             // door close
             _value = 0;
-        } else if (avgMesure < 200)  {
+        } else if (_avgMesure < 200)  {
             // door open
             _value = 100;
         }
@@ -390,6 +391,9 @@ void SmartIotDoorCmd::_publishStatus(){
     }
     data["value"]= _value;
     data["sensor"]= _sensorActivated;
+    if(_sensorActivated){
+        data["sensor_mesure"]=_avgMesure;
+    }
 
     #ifdef DEBUG
         Interface::get().getLogger() << F(">DoorCmd node, status;") << endl;

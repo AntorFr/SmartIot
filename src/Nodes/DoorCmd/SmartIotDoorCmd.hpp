@@ -55,6 +55,8 @@ class SmartIotDoorCmd : public SmartIotNode  {
     uint8_t _lastMove;
     bool _defaultPinState;
 
+    uint16_t _avgMesure;
+
     void _startMove(uint8_t move);
     void _endMove();
     void _publishStatus();
