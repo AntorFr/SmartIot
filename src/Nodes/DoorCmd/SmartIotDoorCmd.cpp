@@ -17,6 +17,7 @@ SmartIotDoorCmd::SmartIotDoorCmd(const char* id, const char* name, const char* t
     ,_sensor()
     ,_status(0)
     ,_value(0)
+    ,_mesureLimitOpen(200)
     ,_avgMesure(0)
     ,_lastMove(0) {
     setHandler([=](const String& json){
@@ -112,10 +113,10 @@ void SmartIotDoorCmd::_statusSensor(uint16_t mesure){
             Interface::get().getLogger() << F("DoorCmd sensor avg value: ") << _avgMesure << endl;
         #endif // DEBUG
 
-        if (_avgMesure >= 200) {
+        if (_avgMesure >= _mesureLimitOpen) {
             // door close
             _value = 0;
-        } else if (_avgMesure < 200)  {
+        } else if (_avgMesure < _mesureLimitOpen)  {
             // door open
             _value = 100;
         }
@@ -136,6 +137,9 @@ bool SmartIotDoorCmd::loadNodeConfig(ArduinoJson::JsonObject& data){
     }
     if (data.containsKey("open_duration") && data.containsKey("close_duration")) {
         setDuration(data["open_duration"].as<uint32_t>(),data["close_duration"].as<uint32_t>());
+    }
+    if (data.containsKey("mesure_open")) {
+        setmesureLimitOpen(data["mesure_open"].as<uint16_t>());
     }
     if (data.containsKey("pin_light") && data.containsKey("light_duration")) {
        setupLight(data["pin_light"].as<uint32_t>(),data["light_duration"].as<uint32_t>());
