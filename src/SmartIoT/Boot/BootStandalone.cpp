@@ -695,9 +695,8 @@ bool SmartIotInternals::BootStandalone::__handleConfig(char * topic, char * payl
     _mqttTopicLevelsCount >= 4
     && strcmp_P(_mqttTopicLevels.get()[0], PSTR("setup")) == 0
     && strcmp_P(_mqttTopicLevels.get()[1], PSTR("config")) == 0
-    && ( (strcmp(_mqttTopicLevels.get()[2], DeviceId::getChipId()) == 0
-          && strcmp_P(_mqttTopicLevels.get()[3], PSTR("set")) == 0)
-      )
+    && strcmp(_mqttTopicLevels.get()[2], DeviceId::getChipId()) == 0
+    && strcmp_P(_mqttTopicLevels.get()[3], PSTR("set")) == 0 
     ) {
     if (Interface::get().getConfig().write(_mqttPayloadBuffer.get())) {
       Interface::get().getLogger() << F("✔ Configuration created") << endl;
