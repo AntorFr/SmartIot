@@ -699,7 +699,6 @@ bool SmartIotInternals::BootStandalone::__handleConfig(char * topic, char * payl
           && strcmp_P(_mqttTopicLevels.get()[3], PSTR("set")) == 0)
       )
     ) {
-    Interface::get().getMqttClient().publish(topic, 1, true, "");
     if (Interface::get().getConfig().write(_mqttPayloadBuffer.get())) {
       Interface::get().getLogger() << F("✔ Configuration created") << endl;
       Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("/log/info")), 1, false, "Configuration created" );
@@ -709,6 +708,7 @@ bool SmartIotInternals::BootStandalone::__handleConfig(char * topic, char * payl
     } else {
       Interface::get().getLogger() << F("✖ Configuration not updated") << endl;
     }
+    Interface::get().getMqttClient().publish(topic, 1, true, "");
     return true;
   }
   return false;
