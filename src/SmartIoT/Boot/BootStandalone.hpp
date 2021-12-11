@@ -95,7 +95,6 @@ class BootStandalone : public Boot {
   char* _prefixMqttTopic(PGM_P topic,bool set = false);
   char* _deviceMqttTopic(PGM_P topic,bool set = false);
   void _publish_stats();
-  bool _publish_config();
   bool _publishOtaStatus(uint32_t status, const char* info = nullptr);
   void _endOtaUpdate(bool success, uint8_t update_error = UPDATE_ERROR_OK);
 

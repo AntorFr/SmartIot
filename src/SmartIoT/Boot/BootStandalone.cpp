@@ -45,7 +45,7 @@ void BootStandalone::setup() {
 
   // Generate topic buffer
   size_t baseTopicLength = strlen(DEFAULT_MQTT_BASE_TOPIC) + strlen(DeviceId::getChipId());
-  size_t longestSubtopicLength = 31 + 1;  // /$implementation/ota/firmware/+
+  size_t longestSubtopicLength = 70 + 1;  // /$implementation/ota/firmware/$hash+
   
   _mqttTopic = std::unique_ptr<char[]>(new char[baseTopicLength + longestSubtopicLength]);
   _jsonMessageBuffer = std::unique_ptr<char[]>(new char[JSON_MSG_BUFFER]);
@@ -459,12 +459,6 @@ void BootStandalone::__splitTopic(char* topic) {
   }
 }
 
-bool BootStandalone::_publish_config() {
-  uint16_t packetId;
-  Interface::get().getLogger() << F(" > sending  config...") << endl;
-  packetId = Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("log/config")), 1, true, Interface::get().getConfig().getSafeConfigFile());
-  return (packetId != 0); 
-}
 
 bool SmartIotInternals::BootStandalone::__fillPayloadBuffer(char * topic, char * payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total) {
   // Reallocate Buffer everytime a new message is received
