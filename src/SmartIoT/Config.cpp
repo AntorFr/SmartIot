@@ -49,7 +49,8 @@ bool Config::load() {
   configFile.close();
   buf[configSize] = '\0';
 
-  StaticJsonDocument<MAX_JSON_CONFIG_ARDUINOJSON_BUFFER_SIZE> jsonDoc;
+  DynamicJsonDocument jsonDoc(MAX_JSON_CONFIG_ARDUINOJSON_BUFFER_SIZE);
+
   if (deserializeJson(jsonDoc, buf) != DeserializationError::Ok || !jsonDoc.is<JsonObject>()) {
     Interface::get().getLogger() << F("✖ Invalid JSON in the config file") << endl;
     return false;
@@ -134,11 +135,6 @@ bool Config::load() {
     
   }
 
-  
-
-
-
-
   /* Parse the settings */
   JsonObject settingsObject = parsedJson["settings"].as<JsonObject>();
 
@@ -187,7 +183,8 @@ char* Config::getSafeConfigFile() const {
   configFile.close();
   buf[configSize] = '\0';
 
-  StaticJsonDocument<MAX_JSON_CONFIG_ARDUINOJSON_BUFFER_SIZE> jsonDoc;
+  DynamicJsonDocument jsonDoc(MAX_JSON_CONFIG_ARDUINOJSON_BUFFER_SIZE);
+
   deserializeJson(jsonDoc, buf);
   JsonObject parsedJson = jsonDoc.as<JsonObject>();
   parsedJson["wifi"].as<JsonObject>().remove("password");
@@ -197,6 +194,7 @@ char* Config::getSafeConfigFile() const {
   size_t jsonBufferLength = measureJson(jsonDoc) + 1;
   char* jsonString = new char[jsonBufferLength];
   serializeJson(jsonDoc, jsonString, jsonBufferLength);
+
   return jsonString;
 }
 
@@ -239,15 +237,27 @@ SmartIotBootMode Config::getSmartIotBootModeOnNextBoot() {
 }
 
 bool Config::write(const char* config) {
-  StaticJsonDocument<MAX_JSON_CONFIG_ARDUINOJSON_BUFFER_SIZE> JsonDoc;
-  if (deserializeJson(JsonDoc, config) != DeserializationError::Ok || !JsonDoc.is<JsonObject>()) {
+
+  DynamicJsonDocument jsonDoc(MAX_JSON_CONFIG_ARDUINOJSON_BUFFER_SIZE);
+  if (deserializeJson(jsonDoc, config) != DeserializationError::Ok || !jsonDoc.is<JsonObject>()) {
     Interface::get().getLogger() << F("✖ Invalid or too big JSON") << endl;
     return false;
   }
 
-  JsonObject configObject = JsonDoc.as<JsonObject>();
+  JsonObject configObject = jsonDoc.as<JsonObject>();
 
+  //Add default security info if not provided:
+  if(configObject.containsKey("wifi") && configObject.containsKey("mqtt")){
+    
+    JsonObject reqWifi = configObject["wifi"];  
+    if(!reqWifi.containsKey("password")){ reqWifi["password"] = WIFI_PSWD;}
+
+    JsonObject reqMqtt = configObject["mqtt"];
+    if(!reqMqtt.containsKey("username")){ reqMqtt["username"] = MQTT_USER;}
+    if(!reqMqtt.containsKey("password")){ reqMqtt["password"] = MQTT_PSWD;}
+  }  
   ConfigValidationResult configValidationResult = Validation::validateConfig(configObject);
+
   if (!configValidationResult.valid) {
     Interface::get().getLogger() << F("✖ Config file is not valid, reason: ") << configValidationResult.reason << endl;
     return false;
@@ -261,22 +271,20 @@ bool Config::write(const char* config) {
 void Config::write(const JsonObject config) {
   if (!_spiffsBegin()) { return; }
 
-  SPIFFS.remove(SETUP_FILE_PATH);
-
-  File configFile = SPIFFS.open(SETUP_FILE_PATH, "w");
+  File configFile = SPIFFS.open(SETUP_FILE_PATH, "w+");
   if (!configFile) {
     Interface::get().getLogger() << F("✖ Cannot open config file") << endl;
     return;
   }
-
   serializeJson(config, configFile);
   configFile.close();
+  Interface::get().getLogger() << F(" ✔ Config file updated !") << endl;
 }
 
 bool Config::patch(const char* patch) {
   if (!_spiffsBegin()) { return false; }
 
-  StaticJsonDocument<MAX_JSON_CONFIG_ARDUINOJSON_BUFFER_SIZE> patchJsonDoc;
+  DynamicJsonDocument patchJsonDoc(MAX_JSON_CONFIG_ARDUINOJSON_BUFFER_SIZE);
 
   if (deserializeJson(patchJsonDoc, patch) != DeserializationError::Ok || !patchJsonDoc.is<JsonObject>()) {
     Interface::get().getLogger() << F("✖ Invalid or too big JSON") << endl;
@@ -297,7 +305,8 @@ bool Config::patch(const char* patch) {
   configFile.close();
   configJson[configSize] = '\0';
 
-  StaticJsonDocument<MAX_JSON_CONFIG_ARDUINOJSON_BUFFER_SIZE> configJsonDoc;
+  DynamicJsonDocument configJsonDoc(MAX_JSON_CONFIG_ARDUINOJSON_BUFFER_SIZE);
+
   deserializeJson(configJsonDoc, configJson);
   JsonObject configObject = configJsonDoc.as<JsonObject>();
 
