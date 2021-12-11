@@ -446,9 +446,6 @@ void BootStandalone::__splitTopic(char* topic) {
   }
 
   _mqttTopicLevels = std::unique_ptr<char*[]>(new char*[topicLevelsCount]);
-
-  //_mqttTopicLevels = std::unique_ptr<std::unique_ptr<char[]>[]>(
-  //                      new std::unique_ptr<char[]>[topicLevelsCount]);
   _mqttTopicLevelsCount = topicLevelsCount;
 
   const char* delimiter = "/";
