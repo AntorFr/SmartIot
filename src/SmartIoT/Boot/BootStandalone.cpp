@@ -699,7 +699,6 @@ bool SmartIotInternals::BootStandalone::__handleConfig(char * topic, char * payl
     if (loading_sucess) {
       Interface::get().getLogger() << F("✔ Configuration created") << endl;
       Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("/log/info")), 1, false, "Configuration created" );
-      _publish_config();
       _flaggedForReboot = true;
       Interface::get().getLogger() << F("Flagged for reboot") << endl;
     } else {
