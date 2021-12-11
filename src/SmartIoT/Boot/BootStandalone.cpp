@@ -446,6 +446,9 @@ void BootStandalone::__splitTopic(char* topic) {
   }
 
   _mqttTopicLevels = std::unique_ptr<char*[]>(new char*[topicLevelsCount]);
+
+  //_mqttTopicLevels = std::unique_ptr<std::unique_ptr<char[]>[]>(
+  //                      new std::unique_ptr<char[]>[topicLevelsCount]);
   _mqttTopicLevelsCount = topicLevelsCount;
 
   const char* delimiter = "/";
@@ -616,11 +619,13 @@ bool SmartIotInternals::BootStandalone::__handleOTAUpdates(char* topic, char* pa
         // dynamically allocate some 800 bytes of memory for every payload chunk.
         size_t dec_len = bin_len > 1 ? 2 : 1;
         char c;
-        write_len = (size_t)base64_decode_block(payload, dec_len, &c, &_otaBase64State);
+        //write_len = (size_t)base64_decode_block(payload, dec_len, &c, &_otaBase64State);
+        write_len = static_cast<size_t>(base64_decode_block(payload, dec_len, &c, &_otaBase64State));
         *payload = c;
 
         if (bin_len > 1) {
-          write_len += (size_t)base64_decode_block((const char*)payload + dec_len, bin_len - dec_len, payload + write_len, &_otaBase64State);
+          //write_len += (size_t)base64_decode_block((const char*)payload + dec_len, bin_len - dec_len, payload + write_len, &_otaBase64State);
+          write_len += static_cast<size_t>(base64_decode_block((const char*)payload + dec_len, bin_len - dec_len, payload + write_len, &_otaBase64State));
         }
       } else {
         write_len = 0;
