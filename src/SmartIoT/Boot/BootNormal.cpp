@@ -542,7 +542,6 @@ bool BootNormal::_publish_advertise() {
   #elif defined(ESP8266)
     implementation[F("device")]= "esp8266";  
   #endif // ESP32
-  //implementation[F("config")]= Interface::get().getConfig().getSafeConfigFile();
   implementation[F("ota")]=Interface::get().getConfig().get().ota.enabled;
   implementation[F("version")]=SMARTIOT_VERSION;
   if (SmartIotNode::nodes.size()) {
