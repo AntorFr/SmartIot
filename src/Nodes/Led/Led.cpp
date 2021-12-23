@@ -133,9 +133,9 @@ void LedObject::turnOn(){
 }
 
 void LedObject::setPattern(String pattern) {
-    _pattern = pattern;
     if(_state){
-        if (_patterns.count(_pattern)>0) {
+        if (_patterns.count(pattern)>0) {
+            _pattern = pattern;
             delete _curentPattern;
             _curentPattern = _patterns[_pattern](this);
             Interface::get().getLogger() << F("> setPattern: ") << pattern.c_str() << F(" done") << endl;
