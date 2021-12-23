@@ -89,6 +89,7 @@ SmartIotNode::SmartIotNode(const char* id, const char* name, const char* type, c
 , _settable(false)
 , _properties()
 , _retained(false)
+, _overwriteSetter(false)
 , _mqttTopic(nullptr)
 , _inputHandler(inputHandler) {
   if (strlen(id) + 1 > MAX_NODE_ID_LENGTH || strlen(type) + 1 > MAX_NODE_TYPE_LENGTH) {
@@ -127,6 +128,16 @@ uint16_t SmartIotNode::send(const String& value) {
   }
 
   uint16_t packetId = Interface::get().getMqttClient().publish(_mqttTopic.get(), 1, _retained, value.c_str());
+
+  if (doesOverwriteSetter()) {
+    char* topic = new char[strlen(_mqttTopic.get()) + 4];
+    strcpy(topic, _mqttTopic.get());
+    strcat_P(topic, PSTR("/set"));
+    Interface::get().getMqttClient().publish(topic, 1, true, value.c_str());
+    Interface::get().getLogger() << F(" > overwriter message send to: ") << topic << endl;
+    overwriteSetter(false);
+    delete[] topic;
+  }
 
   return packetId;
 }

@@ -320,7 +320,7 @@ void BootNormal::_endOtaUpdate(bool success, uint8_t update_error) {
     _flaggedForReboot = true;
   } else {
     Update.end();
-    uint8_t code;
+    uint16_t code;
     String info;
     switch (update_error) {
       case UPDATE_ERROR_SIZE:               // new firmware size is zero
@@ -504,7 +504,7 @@ bool BootNormal::_publish_advertise() {
   auto numSettings = ISmartIotSetting::settings.size();
   auto numNodes = SmartIotNode::nodes.size();
   DynamicJsonDocument jsonBuffer (
-    JSON_OBJECT_SIZE(5) + //data
+    JSON_OBJECT_SIZE(6) + //data
     JSON_OBJECT_SIZE(6) + //stats
     JSON_OBJECT_SIZE(6) + //fw
     JSON_OBJECT_SIZE(6) + //implementation
@@ -515,7 +515,7 @@ bool BootNormal::_publish_advertise() {
   JsonObject data = jsonBuffer.to<JsonObject>();
   data[F("name")]= Interface::get().getConfig().get().name;
   data[F("id")]=  Interface::get().getConfig().get().deviceId;
-  //data[F("mac")]= WiFi.macAddress().c_str();
+  data[F("mac")]= WiFi.macAddress();
 
   IPAddress localIp = WiFi.localIP();
   char localIpStr[MAX_IP_STRING_LENGTH];
@@ -542,7 +542,6 @@ bool BootNormal::_publish_advertise() {
   #elif defined(ESP8266)
     implementation[F("device")]= "esp8266";  
   #endif // ESP32
-  //implementation[F("config")]= Interface::get().getConfig().getSafeConfigFile();
   implementation[F("ota")]=Interface::get().getConfig().get().ota.enabled;
   implementation[F("version")]=SMARTIOT_VERSION;
   if (SmartIotNode::nodes.size()) {
@@ -928,6 +927,7 @@ bool SmartIotInternals::BootNormal::__handleOTAUpdates(char* topic, char* payloa
       }
       _otaSizeDone = 0;
       _otaSizeTotal = _otaIsBase64 ? base64_decode_expected_len(total) : total;
+
       bool success = Update.begin(_otaSizeTotal);
       if (!success) {
         // Detected error during begin (e.g. size == 0 or size > space)
@@ -971,11 +971,11 @@ bool SmartIotInternals::BootNormal::__handleOTAUpdates(char* topic, char* payloa
         // dynamically allocate some 800 bytes of memory for every payload chunk.
         size_t dec_len = bin_len > 1 ? 2 : 1;
         char c;
-        write_len = (size_t)base64_decode_block(payload, dec_len, &c, &_otaBase64State);
+        write_len = static_cast<size_t>(base64_decode_block(payload, dec_len, &c, &_otaBase64State));
         *payload = c;
 
         if (bin_len > 1) {
-          write_len += (size_t)base64_decode_block((const char*)payload + dec_len, bin_len - dec_len, payload + write_len, &_otaBase64State);
+          write_len += static_cast<size_t>(base64_decode_block((const char*)payload + dec_len, bin_len - dec_len, payload + write_len, &_otaBase64State));
         }
       } else {
         write_len = 0;
@@ -1002,19 +1002,19 @@ bool SmartIotInternals::BootNormal::__handleOTAUpdates(char* topic, char* payloa
         progress.concat(F("/"));
         progress.concat(_otaSizeTotal);
 
-        static uint32_t count = 0;
-        if (count == 100) {
-          _publishOtaStatus(206, progress.c_str());  // 206 Partial Content
-          count = 0;
-        }
-        ++count;
-
         Interface::get().getLogger() << F("Receiving OTA firmware (") << progress << F(")...") << endl;
 
         Interface::get().event.type = SmartIotEventType::OTA_PROGRESS;
         Interface::get().event.sizeDone = _otaSizeDone;
         Interface::get().event.sizeTotal = _otaSizeTotal;
         Interface::get().eventHandler(Interface::get().event);
+
+        static uint32_t count = 0;
+        if (count == 100) {
+          _publishOtaStatus(206, progress.c_str());  // 206 Partial Content
+          count = 0;
+        }
+        ++count;
 
         //  Done with the update?
         if (index + len == total) {

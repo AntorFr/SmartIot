@@ -27,6 +27,7 @@ class SmartIotDoorCmd : public SmartIotNode  {
     ~SmartIotDoorCmd();
     void setPins(uint8_t openPin,uint8_t closePin, bool defaultstate= 0);
     void setupLight(uint8_t pin, uint32_t duration) {_pinLight = pin; _lightDuration= duration;}
+    void setmesureLimitOpen(uint16_t mesureLimitOpen) {_mesureLimitOpen = mesureLimitOpen;}
     void setDuration(uint32_t openDuration,uint32_t closeDuration) {_openDuration = openDuration; _closeDuration = closeDuration;};
     void activateSensor(bool activate = true) { _sensorActivated = activate; }
     bool doorCmdHandler(const String& json);
@@ -53,7 +54,10 @@ class SmartIotDoorCmd : public SmartIotNode  {
     uint8_t _status; // 0:stop 1:openning 2:clossing
     uint8_t _value; // 100:open 0:closed
     uint8_t _lastMove;
+    uint16_t _mesureLimitOpen;
     bool _defaultPinState;
+
+    uint16_t _avgMesure;
 
     void _startMove(uint8_t move);
     void _endMove();
@@ -67,8 +71,8 @@ class SmartIotDoorCmd : public SmartIotNode  {
     Ticker _sensorTicker;
     bool _sensorToRead;
     bool _sensorActivated; //sensor is activated by default but can be configure in settings
-    bool _readSensor(bool forced = false){ if (_sensorActivated && _status == 0 && (_value == 100 || _value == 0 || forced == true)) { _sensorToRead = true; }  }
-    bool _stopReadSensor(){ if (_sensorActivated) {_sensorMesures.clear(); _sensorToRead = false; }}
+    void _readSensor(bool forced = false){ if (_sensorActivated && _status == 0 && (_value == 100 || _value == 0 || forced == true)) { _sensorToRead = true; }  }
+    void _stopReadSensor();
     bool _initSensor();
     
 

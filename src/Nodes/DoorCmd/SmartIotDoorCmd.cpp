@@ -2,7 +2,6 @@
 
 using namespace SmartIotInternals;
 
-
 SmartIotDoorCmd::SmartIotDoorCmd(const char* id, const char* name, const char* type, const NodeInputHandler& inputHandler)
     :SmartIotNode(id,name,type,inputHandler)
     ,_pinOpen(0)
@@ -17,8 +16,10 @@ SmartIotDoorCmd::SmartIotDoorCmd(const char* id, const char* name, const char* t
     ,_sensorActivated(true)
     ,_sensor()
     ,_status(0)
-    ,_value(0),
-    _lastMove(0) {
+    ,_value(0)
+    ,_mesureLimitOpen(200)
+    ,_avgMesure(0)
+    ,_lastMove(0) {
     setHandler([=](const String& json){
         return this->SmartIotDoorCmd::doorCmdHandler(json);
         });
@@ -77,46 +78,45 @@ void SmartIotDoorCmd::loop() {
 }
 
 bool SmartIotDoorCmd::_initSensor(){
-        _sensorMesures.clear();
-        Wire.begin();
-        _sensor.setTimeout(800);
-        if (!_sensor.init())
-        {
-            Interface::get().getLogger() << F(" ✖ Setup Door command : Failed to detect and initialize sensor!") << endl;
-            return false;
-        } else {
-            _sensor.setMeasurementTimingBudget(200000);
-        }
+    _sensorMesures.clear();
+    Wire.begin();
+    _sensor.setTimeout(800);
+    if (!_sensor.init()){
+        Interface::get().getLogger() << F(" ✖ Setup Door command : Failed to detect and initialize sensor!") << endl;
+        return false;
+    } else {
+        _sensor.setMeasurementTimingBudget(200000);
+    }
+    return true;
+}
 
-        return true;
+void SmartIotDoorCmd::_stopReadSensor(){
+    if (_sensorActivated){
+        _sensorMesures.clear();
+        _sensorToRead = false; 
+    }
 }
 
 void SmartIotDoorCmd::_statusSensor(uint16_t mesure){
     _sensorMesures.push_back(mesure);
-    if(_sensorMesures.size() <= 10){
+    if(_sensorMesures.size() <= 20){
         // not enought data to compute status yet
         return;
     } else {
-        _sensorMesures.erase(_sensorMesures.begin(),_sensorMesures.begin()+_sensorMesures.size()-10);
+        //remove any additional reading
+        _sensorMesures.erase(_sensorMesures.begin(),_sensorMesures.begin()+_sensorMesures.size()-20);
 
         auto n = _sensorMesures.size();
-        uint16_t avgMesure = std::accumulate(_sensorMesures.begin(), _sensorMesures.end(),0) / n;
+        _avgMesure = std::accumulate(_sensorMesures.begin(), _sensorMesures.end(),0) / n;
 
         #ifdef DEBUG
-            Interface::get().getLogger() << F("DoorCmd sensor avg value: ") << avgMesure << endl;
-
-            DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(6)); 
-            JsonObject data = jsonBuffer.to<JsonObject>();
-            data["avgMesure"] = avgMesure;
-            send(data);
+            Interface::get().getLogger() << F("DoorCmd sensor avg value: ") << _avgMesure << endl;
         #endif // DEBUG
 
-
-
-        if (avgMesure >= 200) {
+        if (_avgMesure >= _mesureLimitOpen) {
             // door close
             _value = 0;
-        } else if (avgMesure < 200)  {
+        } else if (_avgMesure < _mesureLimitOpen)  {
             // door open
             _value = 100;
         }
@@ -137,6 +137,9 @@ bool SmartIotDoorCmd::loadNodeConfig(ArduinoJson::JsonObject& data){
     }
     if (data.containsKey("open_duration") && data.containsKey("close_duration")) {
         setDuration(data["open_duration"].as<uint32_t>(),data["close_duration"].as<uint32_t>());
+    }
+    if (data.containsKey("mesure_open")) {
+        setmesureLimitOpen(data["mesure_open"].as<uint16_t>());
     }
     if (data.containsKey("pin_light") && data.containsKey("light_duration")) {
        setupLight(data["pin_light"].as<uint32_t>(),data["light_duration"].as<uint32_t>());
@@ -300,6 +303,9 @@ bool SmartIotDoorCmd::stopMotion(){
 }
 
 void SmartIotDoorCmd::_startMove(uint8_t move){
+    #ifdef DEBUG
+    Interface::get().getLogger() << F("_startMove: ") << move << endl;
+    #endif 
     switch(move) {
         case 1: // oppenning
             _status = 1;
@@ -390,6 +396,9 @@ void SmartIotDoorCmd::_publishStatus(){
     }
     data["value"]= _value;
     data["sensor"]= _sensorActivated;
+    if(_sensorActivated){
+        data["sensor_mesure"]=_avgMesure;
+    }
 
     #ifdef DEBUG
         Interface::get().getLogger() << F(">DoorCmd node, status;") << endl;
@@ -398,6 +407,6 @@ void SmartIotDoorCmd::_publishStatus(){
         Interface::get().getLogger() << F("  - sensor: ") << _sensorActivated << endl;
     #endif // DEBUG
 
-    //send(data);
+    send(data);
 
 }

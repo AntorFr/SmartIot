@@ -11,6 +11,7 @@
 #include "Datatypes/ConfigStruct.hpp"
 #include "Utils/DeviceId.hpp"
 #include "Utils/Validation.hpp"
+#include "Boot/BootStandalone_Const.hpp"
 #include "Constants.hpp"
 #include "Limits.hpp"
 #include "../SmartIotBootMode.hpp"

@@ -99,6 +99,8 @@ class SmartIotNode {
   bool isSettable() const { return _settable; }
   void notSettable() { _settable = false; }
   bool isRetained() const { return _retained; }
+  void overwriteSetter(const bool  overwrite = true) { _overwriteSetter = overwrite;}
+  bool doesOverwriteSetter() const { return _overwriteSetter; }
 
   uint16_t send(const JsonObject& data);
   uint16_t send(const String& value);
@@ -146,6 +148,7 @@ class SmartIotNode {
   const char* _type;
   bool _settable;
   bool _retained;
+  bool _overwriteSetter;
 
   //to be remove >
   bool _range;

@@ -3,7 +3,11 @@
 #include <ArduinoJson.h>
 #include <Ticker.h>
 #define FASTLED_INTERNAL //avoid prama message
-#define FASTLED_ALLOW_INTERRUPTS 0 //avoid esp8266 flickering
+#define FASTLED_ALLOW_INTERRUPTS 0 // 0 avoid esp8266 flickering
+#define INTERRUPT_THRESHOLD 1
+
+//#FIXME ESP8266 V2.7.4 works great but V3.0.x have some missing display even with latest fastledlib
+
 #include <FastLED.h>
 #include <algorithm>
 
@@ -26,12 +30,15 @@ class SmartIotLed : public SmartIotNode  {
     void setFps(uint8_t fps){_fps=fps;}
     void setBrightness(uint8_t scale);
     uint8_t getBrightness();
+    uint8_t getSpeed();
 
     static LedObject* findObject(const char* name);
     static std::vector<LedObject*> objects;
 
     bool ledCmdHandler(const String& json);
     bool ledCmdHandler(const SmartIotRange& range,const String& value);
+    bool SpeedCmdHandler(const SmartIotRange& range,const String& value);
+    
 
     void turnOn();
     void turnOff();
@@ -56,7 +63,7 @@ class SmartIotLed : public SmartIotNode  {
         
 
     private:
-        void ledObjCmdHandler(ArduinoJson::JsonObject& data,LedObject* obj);
+        void ledObjCmdHandler(ArduinoJson::JsonObject& data,LedObject* obj,bool global = false);
 
         void _publishStatus();
 

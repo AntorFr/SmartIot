@@ -45,7 +45,7 @@ void BootStandalone::setup() {
 
   // Generate topic buffer
   size_t baseTopicLength = strlen(DEFAULT_MQTT_BASE_TOPIC) + strlen(DeviceId::getChipId());
-  size_t longestSubtopicLength = 31 + 1;  // /$implementation/ota/firmware/+
+  size_t longestSubtopicLength = 70 + 1;  // /$implementation/ota/firmware/$hash+
   
   _mqttTopic = std::unique_ptr<char[]>(new char[baseTopicLength + longestSubtopicLength]);
   _jsonMessageBuffer = std::unique_ptr<char[]>(new char[JSON_MSG_BUFFER]);
@@ -459,12 +459,6 @@ void BootStandalone::__splitTopic(char* topic) {
   }
 }
 
-bool BootStandalone::_publish_config() {
-  uint16_t packetId;
-  Interface::get().getLogger() << F(" > sending  config...") << endl;
-  packetId = Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("log/config")), 1, true, Interface::get().getConfig().getSafeConfigFile());
-  return (packetId != 0); 
-}
 
 bool SmartIotInternals::BootStandalone::__fillPayloadBuffer(char * topic, char * payload, const AsyncMqttClientMessageProperties& properties, size_t len, size_t index, size_t total) {
   // Reallocate Buffer everytime a new message is received
@@ -622,11 +616,13 @@ bool SmartIotInternals::BootStandalone::__handleOTAUpdates(char* topic, char* pa
         // dynamically allocate some 800 bytes of memory for every payload chunk.
         size_t dec_len = bin_len > 1 ? 2 : 1;
         char c;
-        write_len = (size_t)base64_decode_block(payload, dec_len, &c, &_otaBase64State);
+        //write_len = (size_t)base64_decode_block(payload, dec_len, &c, &_otaBase64State);
+        write_len = static_cast<size_t>(base64_decode_block(payload, dec_len, &c, &_otaBase64State));
         *payload = c;
 
         if (bin_len > 1) {
-          write_len += (size_t)base64_decode_block((const char*)payload + dec_len, bin_len - dec_len, payload + write_len, &_otaBase64State);
+          //write_len += (size_t)base64_decode_block((const char*)payload + dec_len, bin_len - dec_len, payload + write_len, &_otaBase64State);
+          write_len += static_cast<size_t>(base64_decode_block((const char*)payload + dec_len, bin_len - dec_len, payload + write_len, &_otaBase64State));
         }
       } else {
         write_len = 0;
@@ -695,20 +691,22 @@ bool SmartIotInternals::BootStandalone::__handleConfig(char * topic, char * payl
     _mqttTopicLevelsCount >= 4
     && strcmp_P(_mqttTopicLevels.get()[0], PSTR("setup")) == 0
     && strcmp_P(_mqttTopicLevels.get()[1], PSTR("config")) == 0
-    && ( (strcmp(_mqttTopicLevels.get()[2], DeviceId::getChipId()) == 0
-          && strcmp_P(_mqttTopicLevels.get()[3], PSTR("set")) == 0)
-      )
+    && strcmp(_mqttTopicLevels.get()[2], DeviceId::getChipId()) == 0
+    && strcmp_P(_mqttTopicLevels.get()[3], PSTR("set")) == 0 
     ) {
+
+    bool loading_sucess = Interface::get().getConfig().write(_mqttPayloadBuffer.get());
     Interface::get().getMqttClient().publish(topic, 1, true, "");
-    if (Interface::get().getConfig().write(_mqttPayloadBuffer.get())) {
+
+    if (loading_sucess) {
       Interface::get().getLogger() << F("✔ Configuration created") << endl;
       Interface::get().getMqttClient().publish(_deviceMqttTopic(PSTR("/log/info")), 1, false, "Configuration created" );
-      _publish_config();
       _flaggedForReboot = true;
       Interface::get().getLogger() << F("Flagged for reboot") << endl;
     } else {
       Interface::get().getLogger() << F("✖ Configuration not updated") << endl;
     }
+
     return true;
   }
   return false;

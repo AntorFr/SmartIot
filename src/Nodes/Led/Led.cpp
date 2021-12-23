@@ -15,6 +15,7 @@ LedObject::LedObject(const uint8_t firstPos,const uint8_t nbLed, const char* nam
     ,_volume(100)
     ,_avgVolume(100)
     ,_autoplay(false)
+    ,_state(true)
     {
         _leds = new CRGB [_nbLed];
         fill_solid(_leds,_nbLed, CRGB::Black);
@@ -103,22 +104,48 @@ void LedObject::_setRandomPattern(){
     //auto item = _patterns.begin();
     //std::advance( item, random8(_patterns.size()-1));
     //setPattern(item->first);
-    auto item = _autoplayList.begin();
-    std::advance( item, random8(_autoplayList.size()-1));
-    setPattern(*item);
+    if(_state) {
+        auto item = _autoplayList.begin();
+        std::advance( item, random8(_autoplayList.size()-1));
+        setPattern(*item);
+    }
     
+}
+
+void LedObject::turnOff(){
+    _state = false;
+    delete _curentPattern;
+    _curentPattern = _patterns["off"](this);
+    initPattern();
+    Interface::get().getLogger() << F("> turnOff: ") << F(" done") << endl;
+}
+
+
+
+bool LedObject::getState(){
+    return _state;
+}
+
+void LedObject::turnOn(){
+    _state = true;
+    setPattern(_pattern);
+    Interface::get().getLogger() << F("> turnOn: ") << F(" done") << endl;
 }
 
 void LedObject::setPattern(String pattern) {
     _pattern = pattern;
-    if (_patterns.count(_pattern)>0) {
-        delete _curentPattern;
-        _curentPattern = _patterns[_pattern](this);
-        Interface::get().getLogger() << F("> setPattern: ") << pattern.c_str() << F(" done") << endl;
-        initPattern();
-    } else {
-        Interface::get().getLogger() << F("✖ setPattern failed, Pattern ") << pattern.c_str() << F(" does not exist") << endl;}
+    if(_state){
+        if (_patterns.count(_pattern)>0) {
+            delete _curentPattern;
+            _curentPattern = _patterns[_pattern](this);
+            Interface::get().getLogger() << F("> setPattern: ") << pattern.c_str() << F(" done") << endl;
+            initPattern();
+        } else {
+            Interface::get().getLogger() << F("✖ setPattern failed, Pattern ") << pattern.c_str() << F(" does not exist") << endl;
+        }
+        
     }
+}
 
 void LedObject::display() { if(_curentPattern){_curentPattern->display();} }
 void LedObject::showed() {if(_curentPattern){_curentPattern->showed();} }
@@ -170,12 +197,18 @@ void LedObject::_publishStatus(ArduinoJson::JsonObject& data){
     data[F("auto_play")] = _autoplay;
     data[F("effect")] = _pattern;
     data[F("speed")] = _speed;
+
+    if(!data.containsKey("state")) {
+        data[F("state")]= getState()?F("ON"):F("OFF");
+    }
     //data[F("Color")] = "#"+ String((((long)_color.r << 16) | ((long)_color.g << 8 ) | (long)_color.b),HEX);
 
     JsonObject color = data.createNestedObject("color");
     color["r"] = _color.r;
     color["g"] = _color.g;
     color["b"] = _color.b;
-
-    data[F("volume")] = _avgVolume;
+    
+    if(_audioPin){
+        data[F("volume")] = _avgVolume;
+    }
 }

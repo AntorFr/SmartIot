@@ -43,7 +43,10 @@ void SmartIotLed::setup(){
 
     advertise("state").setName("state").setRetained(true).setDatatype("integer").settable([=](const SmartIotRange& range, const String& value){
         return this->ledCmdHandler(range,value);
-        });
+    });
+    advertise("speed").setName("speed").setRetained(true).setDatatype("integer").settable([=](const SmartIotRange& range, const String& value){
+        return this->SpeedCmdHandler(range,value);
+    });
 }
 
 void SmartIotLed::stop(){
@@ -60,11 +63,33 @@ uint8_t SmartIotLed::getBrightness(){
     return _brightness;
 }
 
+uint8_t SmartIotLed::getSpeed(){
+    uint32_t avgSpeed = 0;
+    for (LedObject* iObj : SmartIotLed::objects) {
+        avgSpeed+=iObj->getSpeed();
+    }
+    avgSpeed = avgSpeed/(uint8_t) (_nbObjects());
+    return (uint8_t) avgSpeed;
+}
 
 LedObject* SmartIotLed::createObject(const uint8_t firstPos,const uint8_t nbled,const char* name) {
     LedObject* obj = new LedObject(firstPos,nbled,name);
     objects.push_back(obj);
     return obj;
+}
+
+bool SmartIotLed::SpeedCmdHandler(const SmartIotRange& range, const String& value){
+    #ifdef DEBUG
+        Interface::get().getLogger() << F("Speed received, handle action: ") << value << endl;
+    #endif // DEBUG
+    uint8_t intValue = atoi(value.c_str());
+    if(intValue<=0 || intValue>100) return false; // speed between 1 - 100
+
+    for (LedObject* iObj : SmartIotLed::objects) {
+        iObj->setSpeed(intValue);
+    }
+    _publishStatus();
+    return true;
 }
 
 bool SmartIotLed::ledCmdHandler(const SmartIotRange& range, const String& value){
@@ -86,7 +111,7 @@ bool SmartIotLed::ledCmdHandler(const SmartIotRange& range, const String& value)
 }
 
 bool SmartIotLed::ledCmdHandler(const String& json){
-    DynamicJsonDocument parseJsonBuff (50+ JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(_nbObjects()) + (_nbObjects()) * ( JSON_OBJECT_SIZE(3)+JSON_ARRAY_SIZE(3))); 
+    DynamicJsonDocument parseJsonBuff (50+ JSON_OBJECT_SIZE(10+_nbObjects()) + (_nbObjects()) * ( JSON_OBJECT_SIZE(10)+JSON_ARRAY_SIZE(3))); 
     DeserializationError error = deserializeJson(parseJsonBuff, json);
     if (error) {
         Interface::get().getLogger() << F("✖ Invalid JSON LED commande: ") << error.c_str() << endl;
@@ -105,21 +130,39 @@ bool SmartIotLed::ledCmdHandler(const String& json){
         }
     }
     //serializeJsonPretty(data, Serial); 
+    uint8_t nb_fundObject = 0;
     if(!data.containsKey("objects")) {   
-        LedObject* obj = SmartIotLed::objects.front();
-        SmartIotLed::ledObjCmdHandler(data,obj);
+        //LedObject* obj = SmartIotLed::objects.front();
+        for (LedObject* obj : SmartIotLed::objects) {
+            SmartIotLed::ledObjCmdHandler(data,obj,true);
+        }
     } else {
         for (JsonPair item : data["objects"].as<JsonObject>()) {
             LedObject* obj = SmartIotLed::findObject(item.key().c_str());
             JsonObject objData = item.value().as<JsonObject>();
-            if(obj) {SmartIotLed::ledObjCmdHandler(objData,obj);}
+            if(obj) {
+                SmartIotLed::ledObjCmdHandler(objData,obj);
+                nb_fundObject++;
+            }
         }
+    }
+    if((_nbObjects()>1) && (_nbObjects()>nb_fundObject)) {
+        //all objects are not displayed, ask to resend the full status message
+        overwriteSetter(true);
     }
     _publishStatus();
     return true;
 }
 
-void SmartIotLed::ledObjCmdHandler(ArduinoJson::JsonObject& data,LedObject* obj){
+void SmartIotLed::ledObjCmdHandler(ArduinoJson::JsonObject& data,LedObject* obj,bool global){
+    //turn on/off master don't turn on all segment
+    if(!global && data.containsKey("state")){ 
+        if(data["state"]=="OFF"){
+            obj->turnOff();
+        } else if (data["state"]=="ON") {
+            obj->turnOn();
+        }
+    }    
     if(data.containsKey("effect")){ 
         if (data["effect"] == "autoPlay") {
             obj->setAutoPlay(true);
@@ -127,6 +170,9 @@ void SmartIotLed::ledObjCmdHandler(ArduinoJson::JsonObject& data,LedObject* obj)
             obj->setPattern(data["effect"].as<String>());
             obj->setAutoPlay(false);
         }
+    }
+    if(data.containsKey("auto_play")){
+        obj->setAutoPlay(data["auto_play"].as<bool>());
     }
     if(data.containsKey("speed")){ obj->setSpeed(data["speed"].as<uint8_t>()); }
     if(data.containsKey("color")){ obj->setColor(data["color"]["r"],data["color"]["g"],data["color"]["b"]);}  
@@ -167,13 +213,11 @@ bool SmartIotLed::loadNodeConfig(ArduinoJson::JsonObject& data){
     if(data.containsKey("fps")) {
         setFps(data["fps"]);
     }
-
     if(data.containsKey("brightness")) {
         setBrightness(data["brightness"]);
     } else {
         setBrightness(255);
     }
-
     if(!data.containsKey("objects")) {
         if (data.containsKey("nb_led")){
             LedObject* obj = createObject(0,data["nb_led"],data["node_name"]);
@@ -187,8 +231,8 @@ bool SmartIotLed::loadNodeConfig(ArduinoJson::JsonObject& data){
             Interface::get().getLogger() << F("✖ Led config invalid: nb_led is missing") << endl;
         }
     } else {
-        for (JsonPair item : data["objects"].as<JsonObject>()) {
-            JsonObject objData = item.value().as<JsonObject>();
+        for (JsonVariant item : data["objects"].as<JsonArray>()) {
+            JsonObject objData = item.as<JsonObject>();
             if (objData.containsKey("nb_led") && objData.containsKey("name") && objData.containsKey("start_led") ) {
                 LedObject* obj = createObject(objData["start_led"],objData["nb_led"],objData["name"].as<const char*>());
                 if(objData.containsKey("audio_pin")) {
@@ -221,7 +265,7 @@ void SmartIotLed::turnOn(){
 }
 
 void SmartIotLed::_publishStatus(){
-    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(6) + _nbObjects() * JSON_OBJECT_SIZE(6)); 
+    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(9) + _nbObjects() * JSON_OBJECT_SIZE(12)); 
     JsonObject data = jsonBuffer.to<JsonObject>();
 
     data[F("milli_amps")]=_milli_amps;
@@ -234,14 +278,17 @@ void SmartIotLed::_publishStatus(){
         LedObject* iLedObj = objects.front();
         iLedObj->_publishStatus(data);
     } else {
+        data[F("speed")] = getSpeed();
+        JsonObject nstObjects = data.createNestedObject(F("objects"));
         for (LedObject* iLedObj : objects){
-            JsonObject objData = data.createNestedObject(iLedObj->getName());
+            JsonObject objData = nstObjects.createNestedObject(iLedObj->getName());
             iLedObj->_publishStatus(objData);
         }
     }
     send(data);
 
-    getProperty("state")->send(String(getBrightness()));
+    getProperty("state")->send(_state?String(getBrightness()):"0");
+    getProperty("speed")->send(String(getSpeed()));
 }
 
 void SmartIotLed::publish_stats(){
