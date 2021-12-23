@@ -227,6 +227,9 @@ bool SmartIotLed::loadNodeConfig(ArduinoJson::JsonObject& data){
             if(data.containsKey("auto_play") && data.containsKey("auto_play_duration")) {
                 obj->setAutoPlay(data["auto_play"].as<bool>(),data["auto_play_duration"].as<uint8_t>());  
             }
+            if(data.containsKey("play_list") && data["play_list"].is<JsonArray>()){
+                obj->setPlayList(data["play_list"].as<JsonArray>());
+            }
         } else {
             Interface::get().getLogger() << F("✖ Led config invalid: nb_led is missing") << endl;
         }
@@ -240,6 +243,9 @@ bool SmartIotLed::loadNodeConfig(ArduinoJson::JsonObject& data){
                 }
                 if(objData.containsKey("auto_play") && objData.containsKey("auto_play_duration")) {
                     obj->setAutoPlay(objData["auto_play"].as<bool>(),objData["auto_play_duration"].as<uint8_t>());  
+                }
+                if(data.containsKey("play_list") && data["play_list"].is<JsonArray>()){
+                    obj->setPlayList(data["play_list"].as<JsonArray>());
                 }
             } else {
                 Interface::get().getLogger() << F("✖ Led config object invalid...") << endl;

@@ -193,6 +193,17 @@ void LedObject::setAutoPlay(bool autoplay, uint8_t duration) {
     }
 }
 
+void LedObject::setPlayList(ArduinoJson::JsonArray playlist){
+    _autoplayList.clear();
+    for(JsonVariant v : playlist) {
+        if(_patterns.count(v.as<String>())>0){
+            _autoplayList.insert(_autoplayList.begin(),v.as<String>());
+        } else {
+            Interface::get().getLogger() << F("✖ setPlayList: ") << v.as<const char*>() << F(" pattern does not exist") << endl;
+        }
+    }
+}
+
 void LedObject::_publishStatus(ArduinoJson::JsonObject& data){
     data[F("auto_play")] = _autoplay;
     data[F("effect")] = _pattern;

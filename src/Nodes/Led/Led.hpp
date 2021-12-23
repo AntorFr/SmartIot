@@ -30,6 +30,7 @@ class LedObject {
         bool getState();
         void initPattern();
         void setAutoPlay(bool autoplay, uint8_t duration = 30);
+        void setPlayList(ArduinoJson::JsonArray playlist);
         String getMotif() {return _pattern;}
 
         const char* getName() const {return _name;}
