@@ -47,6 +47,7 @@ LedObject::LedObject(const uint8_t firstPos,const uint8_t nbLed, const char* nam
         //TwinklePattern
         _patterns["cloudTwinkles"]= [](LedObject* ledObj) -> LedPattern* { return new TwinklePattern(ledObj,CloudColors_p); };
         _patterns["rainbowTwinkles"]= [](LedObject* ledObj) -> LedPattern* { return new TwinklePattern(ledObj,RainbowColors_p); };
+        _patterns["rainbowGlitterTwinkles"]= [](LedObject* ledObj) -> LedPattern* { LedPattern* pat = new TwinklePattern(ledObj,RainbowColors_p); pat->addGlitter(30); return pat;};
         _patterns["snowTwinkles"]= [](LedObject* ledObj) -> LedPattern* { return new TwinklePattern(ledObj,Snow2_p); };
         _patterns["incandescentTwinkles"]= [](LedObject* ledObj) -> LedPattern* { return new TwinklePattern(ledObj,FireOrange_p); };
 
