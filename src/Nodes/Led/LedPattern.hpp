@@ -18,6 +18,7 @@ namespace SmartIotInternals {
         protected:
             virtual void init() {};
             virtual void display() {};
+            void displayEffect();
             void addGlitter(fract8 chanceOfGlitter) {_chanceOfGlitter = chanceOfGlitter;}
             void addPowerCut(fract16 chanceOfPowercut){_chanceOfPowercut = _chanceOfPowercut;}
             uint8_t _nbLed;

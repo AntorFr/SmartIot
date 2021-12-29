@@ -72,7 +72,7 @@ LedObject::LedObject(const uint8_t firstPos,const uint8_t nbLed, const char* nam
         _curentPattern = _patterns["color"](this);
 
         _autoplayList = {
-                        "confetti","star","pride","sinelon","cloudTwinkles","rainbowTwinkles","snowTwinkles","incandescentTwinkles","redGreenWhiteTwinkles","hollyTwinkles","redWhiteTwinkles",
+                        "confetti","star","pride","sinelon","cloudTwinkles","rainbowTwinkles","rainbowGlitterTwinkles","snowTwinkles","incandescentTwinkles","redGreenWhiteTwinkles","hollyTwinkles","redWhiteTwinkles",
                         "blueWhiteTwinkles","fairyLightTwinkles","snow2Twinkles","iceTwinkles","retroC9Twinkles","partyTwinkles","forestTwinkles","lavaTwinkles","fireTwinkles","cloud2Twinkles","oceanTwinkles"
                         };
 
