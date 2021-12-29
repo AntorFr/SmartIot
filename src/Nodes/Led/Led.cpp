@@ -43,6 +43,7 @@ LedObject::LedObject(const uint8_t firstPos,const uint8_t nbLed, const char* nam
         //HeatMap
         _patterns["fire"] = [](LedObject* ledObj) -> LedPattern* { return new HeatMapPattern(ledObj,HeatColors_p, true); };
         _patterns["water"] = [](LedObject* ledObj) -> LedPattern* { return new HeatMapPattern(ledObj,IceColors_p, false); };
+        _patterns["halloween"] = [](LedObject* ledObj) -> LedPattern* {LedPattern* pat = new HeatMapPattern(ledObj,HeatColors_p, true); pat->addPowerCut(30); return pat;};
         
         //TwinklePattern
         _patterns["cloudTwinkles"]= [](LedObject* ledObj) -> LedPattern* { return new TwinklePattern(ledObj,CloudColors_p); };
