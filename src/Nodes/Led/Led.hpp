@@ -29,7 +29,8 @@ class LedObject {
         void turnOn();
         bool getState();
         void initPattern();
-        void setAutoPlay(bool autoplay, uint8_t duration = 30);
+        void setAutoPlay(bool autoplay, uint8_t duration);
+        void setAutoPlay(bool autoplay);
         void setPlayList(ArduinoJson::JsonArray playlist);
         String getMotif() {return _pattern;}
 

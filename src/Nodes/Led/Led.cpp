@@ -16,6 +16,7 @@ LedObject::LedObject(const uint16_t firstPos,const uint16_t nbLed, const char* n
     ,_avgVolume(100)
     ,_autoplay(false)
     ,_state(true)
+    ,_autoplayDuration(30)
     {
         _leds = new CRGB [_nbLed];
         fill_solid(_leds,_nbLed, CRGB::Black);
@@ -183,16 +184,20 @@ void LedObject::chooseNextColorPalette()
   //_gTargetPalette = *(gGradientPalettes[_currentPaletteIdx]);
 }
 
-void LedObject::setAutoPlay(bool autoplay, uint8_t duration) {
+void LedObject::setAutoPlay(bool autoplay) {
     _autoplay=autoplay;
-    _autoplayDuration=duration;
-
+    
     if(_autoplay) {
         _setRandomPattern();
         _autoPlayTicker.attach_scheduled(_autoplayDuration,std::bind(&LedObject::_setRandomPattern, this));
     } else {
          _autoPlayTicker.detach();
     }
+}
+
+void LedObject::setAutoPlay(bool autoplay, uint8_t duration) {
+    _autoplayDuration=duration;
+    setAutoPlay(autoplay);
 }
 
 void LedObject::setPlayList(ArduinoJson::JsonArray playlist){
