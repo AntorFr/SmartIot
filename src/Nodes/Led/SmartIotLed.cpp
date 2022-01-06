@@ -72,7 +72,7 @@ uint8_t SmartIotLed::getSpeed(){
     return (uint8_t) avgSpeed;
 }
 
-LedObject* SmartIotLed::createObject(const uint8_t firstPos,const uint8_t nbled,const char* name) {
+LedObject* SmartIotLed::createObject(const uint16_t firstPos,const uint16_t nbled,const char* name) {
     LedObject* obj = new LedObject(firstPos,nbled,name);
     objects.push_back(obj);
     return obj;

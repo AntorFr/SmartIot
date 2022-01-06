@@ -2,7 +2,7 @@
 
 using namespace SmartIotInternals;
 
-LedObject::LedObject(const uint8_t firstPos,const uint8_t nbLed, const char* name)
+LedObject::LedObject(const uint16_t firstPos,const uint16_t nbLed, const char* name)
     :_nbLed(nbLed)
     ,_firstPos(firstPos)
     ,_speed(30)

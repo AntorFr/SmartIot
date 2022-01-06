@@ -21,7 +21,7 @@ namespace SmartIotInternals {
             void displayEffect();
             void addGlitter(fract8 chanceOfGlitter) {_chanceOfGlitter = chanceOfGlitter;}
             void addPowerCut(fract16 chanceOfPowercut){_chanceOfPowercut = _chanceOfPowercut;}
-            uint8_t _nbLed;
+            uint16_t _nbLed;
             CRGB* _leds;
             const LedObject* _obj;
             bool _show;

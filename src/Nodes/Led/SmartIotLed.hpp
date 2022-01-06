@@ -26,7 +26,7 @@ class SmartIotLed : public SmartIotNode  {
     public:
     SmartIotLed(const char* id, const char* name, const char* type = "led");
 
-    LedObject* createObject(const uint8_t firstPos,const uint8_t nbled,const char* name);
+    LedObject* createObject(const uint16_t firstPos,const uint16_t nbled,const char* name);
     void setFps(uint8_t fps){_fps=fps;}
     void setBrightness(uint8_t scale);
     uint8_t getBrightness();
