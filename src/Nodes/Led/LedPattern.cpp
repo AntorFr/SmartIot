@@ -3,25 +3,39 @@
 using namespace SmartIotInternals;
 
 LedPattern::LedPattern(const LedObject*  obj)
-    :_show(false)
+    :_show(false),_pwrCutMem(0),_chanceOfGlitter(0),_chanceOfPowercut(0)
 {
     _nbLed = obj->_nbLed;
     _leds = obj->_leds;
     _obj = obj;
 }
 
-void LedPattern::addGlitter(fract8 chanceOfGlitter) 
+void LedPattern::glitter() 
 {
-  if( random8() < chanceOfGlitter) {
+  if( random8() < _chanceOfGlitter) {
     _leds[ random16(_nbLed) ] += CRGB::White;
+    show();
   }
 }
 
-void LedPattern::addPowerCut(fract16 chanceOfPowercut) 
+void LedPattern::powerCut() 
 {
-  if( random16() < chanceOfPowercut) {
-    fill_solid(_leds,_nbLed, CRGB::Black);
+  if((random16() < _chanceOfPowercut) && (_pwrCutMem == 0)){
+    _pwrCutMem == 1;
   }
+  if(_pwrCutMem>0){
+    if(_pwrCutMem == 1 || _pwrCutMem == 3 || _pwrCutMem == 7) {
+      fill_solid(_leds,_nbLed, CRGB::Black);
+      show();
+    } 
+    _pwrCutMem++;
+    if (_pwrCutMem>8) { _pwrCutMem == 0;}
+  }
+}
+
+void LedPattern::displayEffect(){
+  if(_chanceOfGlitter > 0) LedPattern::glitter();
+  if(_chanceOfPowercut > 0) LedPattern::powerCut();
 }
 
 void OffPattern::init(){
@@ -49,6 +63,7 @@ void BlinkPattern::display()
         _blink= !_blink;
         show();
     }
+    LedPattern::displayEffect();
 }
 
 void WipePattern::display()
@@ -64,6 +79,7 @@ void WipePattern::display()
          fill_solid(_leds+p,_nbLed-p,_obj->getColor());
      }
     show();
+    LedPattern::displayEffect();
 }
 
 void LaserPattern::display()
@@ -79,6 +95,7 @@ void LaserPattern::display()
          fill_solid(_leds+p, _nbLed-p,_obj->getColor());
      }
     show();
+    LedPattern::displayEffect();
 }
 
 void BreathePattern::display()
@@ -89,12 +106,14 @@ void BreathePattern::display()
         _leds[i].nscale8(hue);
     }
     show();
+    LedPattern::displayEffect();
 }
 
 void RainbowPattern::display()
 {
     fill_rainbow(_leds, _nbLed,beat8(_obj->getSpeed()/3),255/(4*_nbLed));
     show();
+    LedPattern::displayEffect();
 }
 
 void K2000Pattern::display()
@@ -103,6 +122,7 @@ void K2000Pattern::display()
     int pos = beatsin16(_obj->getSpeed(),0,_nbLed-1);
     _leds[pos] = _obj->getColor();
     show();
+    LedPattern::displayEffect();
 }
 
 void ComputerPattern::display()
@@ -110,12 +130,11 @@ void ComputerPattern::display()
     fadeToBlackBy(_leds, _nbLed,_obj->getSpeed()/2);
     int pos = beatsin16(_obj->getSpeed()/2,1,_nbLed);
     if(pos<=_nbLed/2){
-    _leds[pos-1] = _obj->getColor();
-    _leds[_nbLed-pos] = _obj->getColor();
-    } else {
-
+      _leds[pos-1] = _obj->getColor();
+      _leds[_nbLed-pos] = _obj->getColor();
     }
     show();
+    LedPattern::displayEffect();
 }
 
 void ConfettiPattern::display()
@@ -124,6 +143,7 @@ void ConfettiPattern::display()
     int pos = random16(_nbLed);
     _leds[pos] += CHSV( beat8(_obj->getSpeed()/3) + random8(64), 200, 255);
     show();
+    displayEffect();
 }
 
 void StarPattern::init()
@@ -136,7 +156,6 @@ void StarPattern::init()
 }
 void StarPattern::display()
 {
-
     for(uint16_t i=0; i<_nbLed; i++){
         if (_stars[i]==0 && random16(60*_obj->getSpeed())==0){
             _stars[i]=255;
@@ -153,6 +172,7 @@ void StarPattern::display()
         else if (_stars[i] > 0) {_stars[i] = (_stars[i]<=254)?_stars[i]+2:0;}
     }
     show();
+    displayEffect();
 }
 
 void PridePattern::display()
@@ -192,6 +212,7 @@ void PridePattern::display()
         nblend( _leds[pixelnumber], newcolor, 64);
     }
     show();
+    displayEffect();
 }
 
 void TwinkleFoxPattern::display()
@@ -241,7 +262,9 @@ void TwinkleFoxPattern::display()
     }
   }
   show();
+  displayEffect();
 }
+
 CRGB TwinkleFoxPattern::computeOneTwinkle( uint32_t ms, uint8_t salt)
 {
   uint16_t ticks = ms >> (8-_speed);
@@ -268,6 +291,7 @@ CRGB TwinkleFoxPattern::computeOneTwinkle( uint32_t ms, uint8_t salt)
   }
   return c;
 }
+
 void TwinkleFoxPattern::coolLikeIncandescent( CRGB& c, uint8_t phase)
 {
   if( phase < 128) return;
@@ -276,6 +300,7 @@ void TwinkleFoxPattern::coolLikeIncandescent( CRGB& c, uint8_t phase)
   c.g = qsub8( c.g, cooling);
   c.b = qsub8( c.b, cooling * 2);
 }
+
 uint8_t TwinkleFoxPattern::attackDecayWave8( uint8_t i)
 {
   if( i < 86) {
@@ -304,6 +329,7 @@ void RainbowSoundPattern::display()
         }
     }
     show();
+    displayEffect();
 }
 
 CRGB TwinklePattern::makeBrighter( const CRGB& color, fract8 howMuchBrighter)
@@ -363,6 +389,7 @@ void TwinklePattern::brightenOrDarkenEachPixel(fract8 fadeUpAmount, fract8 fadeD
     }
   }
 }
+
 void TwinklePattern::display()
 {
   if(_ticker){
@@ -379,6 +406,7 @@ void TwinklePattern::display()
     }
     show();
   }
+  displayEffect();
 }
 
 void HeatMapPattern::init(){
@@ -442,6 +470,7 @@ void HeatMapPattern::display()
     }
   }
   show();
+  displayEffect();
 }
 
 void ColorWavePattern::display()
@@ -491,6 +520,7 @@ void ColorWavePattern::display()
     nblend(_leds[pixelnumber], newcolor, 128);
   }
   show();
+  displayEffect();
 }
 
 void SinelonPattern::display()
@@ -505,6 +535,7 @@ void SinelonPattern::display()
   }
   prevpos = pos;
   show();
+  displayEffect();
 }
 
 

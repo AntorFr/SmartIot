@@ -14,7 +14,7 @@ class LedObject {
     friend SmartIotLed;
     friend SmartIotInternals::LedPattern;
     public:
-        LedObject(const uint8_t firstPos,const uint8_t nbLed,const char* name);
+        LedObject(const uint16_t firstPos,const uint16_t nbLed,const char* name);
         void display();
         void dimAll(byte value);
         void setColor(CRGB color);
@@ -29,7 +29,9 @@ class LedObject {
         void turnOn();
         bool getState();
         void initPattern();
-        void setAutoPlay(bool autoplay, uint8_t duration = 30);
+        void setAutoPlay(bool autoplay, uint8_t duration);
+        void setAutoPlay(bool autoplay);
+        void setPlayList(ArduinoJson::JsonArray playlist);
         String getMotif() {return _pattern;}
 
         const char* getName() const {return _name;}
@@ -39,12 +41,12 @@ class LedObject {
         uint16_t getAudio() const;
 
     protected:
-        uint8_t _nbLed;
+        uint16_t _nbLed;
         CRGB* _leds;
 
     private:
         const char* _name;
-        uint8_t _firstPos;
+        uint16_t _firstPos;
         uint8_t _speed;
         bool _state;
         bool _autoplay;

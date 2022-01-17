@@ -2,7 +2,7 @@
 
 using namespace SmartIotInternals;
 
-LedObject::LedObject(const uint8_t firstPos,const uint8_t nbLed, const char* name)
+LedObject::LedObject(const uint16_t firstPos,const uint16_t nbLed, const char* name)
     :_nbLed(nbLed)
     ,_firstPos(firstPos)
     ,_speed(30)
@@ -16,6 +16,7 @@ LedObject::LedObject(const uint8_t firstPos,const uint8_t nbLed, const char* nam
     ,_avgVolume(100)
     ,_autoplay(false)
     ,_state(true)
+    ,_autoplayDuration(30)
     {
         _leds = new CRGB [_nbLed];
         fill_solid(_leds,_nbLed, CRGB::Black);
@@ -43,10 +44,12 @@ LedObject::LedObject(const uint8_t firstPos,const uint8_t nbLed, const char* nam
         //HeatMap
         _patterns["fire"] = [](LedObject* ledObj) -> LedPattern* { return new HeatMapPattern(ledObj,HeatColors_p, true); };
         _patterns["water"] = [](LedObject* ledObj) -> LedPattern* { return new HeatMapPattern(ledObj,IceColors_p, false); };
+        _patterns["halloween"] = [](LedObject* ledObj) -> LedPattern* {LedPattern* pat = new HeatMapPattern(ledObj,HeatColors_p, true); pat->addPowerCut(30); return pat;};
         
         //TwinklePattern
         _patterns["cloudTwinkles"]= [](LedObject* ledObj) -> LedPattern* { return new TwinklePattern(ledObj,CloudColors_p); };
         _patterns["rainbowTwinkles"]= [](LedObject* ledObj) -> LedPattern* { return new TwinklePattern(ledObj,RainbowColors_p); };
+        _patterns["rainbowGlitterTwinkles"]= [](LedObject* ledObj) -> LedPattern* { LedPattern* pat = new TwinklePattern(ledObj,RainbowColors_p); pat->addGlitter(30); return pat;};
         _patterns["snowTwinkles"]= [](LedObject* ledObj) -> LedPattern* { return new TwinklePattern(ledObj,Snow2_p); };
         _patterns["incandescentTwinkles"]= [](LedObject* ledObj) -> LedPattern* { return new TwinklePattern(ledObj,FireOrange_p); };
 
@@ -71,7 +74,7 @@ LedObject::LedObject(const uint8_t firstPos,const uint8_t nbLed, const char* nam
         _curentPattern = _patterns["color"](this);
 
         _autoplayList = {
-                        "confetti","star","pride","sinelon","cloudTwinkles","rainbowTwinkles","snowTwinkles","incandescentTwinkles","redGreenWhiteTwinkles","hollyTwinkles","redWhiteTwinkles",
+                        "confetti","star","pride","sinelon","cloudTwinkles","rainbowTwinkles","rainbowGlitterTwinkles","snowTwinkles","incandescentTwinkles","redGreenWhiteTwinkles","hollyTwinkles","redWhiteTwinkles",
                         "blueWhiteTwinkles","fairyLightTwinkles","snow2Twinkles","iceTwinkles","retroC9Twinkles","partyTwinkles","forestTwinkles","lavaTwinkles","fireTwinkles","cloud2Twinkles","oceanTwinkles"
                         };
 
@@ -133,9 +136,9 @@ void LedObject::turnOn(){
 }
 
 void LedObject::setPattern(String pattern) {
-    _pattern = pattern;
     if(_state){
-        if (_patterns.count(_pattern)>0) {
+        if (_patterns.count(pattern)>0) {
+            _pattern = pattern;
             delete _curentPattern;
             _curentPattern = _patterns[_pattern](this);
             Interface::get().getLogger() << F("> setPattern: ") << pattern.c_str() << F(" done") << endl;
@@ -181,15 +184,30 @@ void LedObject::chooseNextColorPalette()
   //_gTargetPalette = *(gGradientPalettes[_currentPaletteIdx]);
 }
 
-void LedObject::setAutoPlay(bool autoplay, uint8_t duration) {
+void LedObject::setAutoPlay(bool autoplay) {
     _autoplay=autoplay;
-    _autoplayDuration=duration;
-
+    
     if(_autoplay) {
         _setRandomPattern();
         _autoPlayTicker.attach_scheduled(_autoplayDuration,std::bind(&LedObject::_setRandomPattern, this));
     } else {
          _autoPlayTicker.detach();
+    }
+}
+
+void LedObject::setAutoPlay(bool autoplay, uint8_t duration) {
+    _autoplayDuration=duration;
+    setAutoPlay(autoplay);
+}
+
+void LedObject::setPlayList(ArduinoJson::JsonArray playlist){
+    _autoplayList.clear();
+    for(JsonVariant v : playlist) {
+        if(_patterns.count(v.as<String>())>0){
+            _autoplayList.insert(_autoplayList.begin(),v.as<String>());
+        } else {
+            Interface::get().getLogger() << F("✖ setPlayList: ") << v.as<const char*>() << F(" pattern does not exist") << endl;
+        }
     }
 }
 
