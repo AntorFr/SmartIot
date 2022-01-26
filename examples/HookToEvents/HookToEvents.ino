@@ -47,6 +47,9 @@ void onSmartIotEvent(const SmartIotEvent& event) {
     case SmartIotEventType::SENDING_STATISTICS:
       Serial << "Sending statistics" << endl;
       break;
+    case SmartIotEventType::NTP_SYNCHRONIZED:
+      Serial << "NTP synchronized" << endl;
+      break;
   }
 }
 

@@ -17,6 +17,7 @@ InterfaceData::InterfaceData()
   , ready{ false }
   , _logger{ nullptr }
   , _blinker{ nullptr }
+  , _time{ nullptr }
   , _config{ nullptr }
   , _mqttClient{ nullptr }
   , _loopFunction{ nullptr }
