@@ -84,6 +84,9 @@ void BootStandalone::setup() {
 #if SMARTIOT_CONFIG
   ResetHandler::Attach();
 #endif
+  
+  //Config NTP
+  Interface::get().getTime().init();
 
   _wifiConnect();
 }

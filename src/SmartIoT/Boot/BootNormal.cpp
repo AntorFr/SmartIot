@@ -107,6 +107,8 @@ void BootNormal::setup() {
 #if SMARTIOT_CONFIG
   ResetHandler::Attach();
 #endif
+  //Config NTP
+  Interface::get().getTime().init();
 
   Interface::get().getConfig().log();
 

@@ -39,6 +39,7 @@ SmartIotClass::SmartIotClass()
   Interface::get()._blinker = &_blinker;
   Interface::get()._logger = &_logger;
   Interface::get()._config = &_config;
+  Interface::get()._time = &_time;
 
   DeviceId::generate();
 }
@@ -380,6 +381,10 @@ AsyncMqttClient& SmartIotClass::getMqttClient() {
 
 Logger& SmartIotClass::getLogger() {
   return _logger;
+}
+
+Time& SmartIotClass::getTime() {
+  return _time;
 }
 
 void SmartIotClass::prepareToSleep() {
