@@ -17,6 +17,13 @@ void Time::_time_is_set(){
     Interface::get().getLogger() << F(" Date: ") << ctime(&_now) << endl;
     Interface::get().event.type = SmartIotEventType::NTP_SYNCHRONIZED;
     Interface::get().eventHandler(Interface::get().event);
+
+    Interface::get().getUpTime().update();
+    time_t upsec = Interface::get().getUpTime().getSeconds();
+    _boot = _now - upsec;
+    _boot_tm = localtime(&_boot);
+
+    Interface::get().getLogger() << F("Boot Date: ") << getIsoBootTime() << endl;
 }
 
 void Time::_sync(){
@@ -26,31 +33,36 @@ void Time::_sync(){
 
 char* Time::getTime(){
     _sync();
-    char buf [8+1];
-    strftime(buf,9,"%T",_tm);
-    return buf;
+    strftime(_buf,30,"%T",_tm);
+    return _buf;
 }
 
 char* Time::getShortTime(){
     _sync();
-    char buf [5+1];
-    strftime(buf,6,"%R",_tm);
-    return buf;
+    strftime(_buf,30,"%R",_tm);
+    return _buf;
 }
 
 char* Time::getDate(){
     _sync();
-    char buf [10+1];
-    strftime(buf,11,"%d/%m/%Y",_tm);
-    return buf;
+    strftime(_buf,30,"%d/%m/%Y",_tm);
+    return _buf;
 }
 
 char* Time::getIso(){
     _sync();
-    char buf [19+1];
-    strftime(buf,20,"%F %T",_tm); //2001-08-23 14:55:02
-    return buf;
+    strftime(_buf,30,"%F %T",_tm); //2001-08-23 14:55:02
+    return _buf;
 
+}
+
+char* Time::getIsoBootTime(){
+    if(time_ready){
+        strftime(_buf,30,"%F %T",_boot_tm); //2001-08-23 14:55:02
+        return _buf; 
+    } else {
+        return getIso();
+    }
 }
 
 void Time::getStrfTime(char* ptr, size_t maxsize, const char* format){

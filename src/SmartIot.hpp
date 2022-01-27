@@ -113,6 +113,8 @@ class SmartIotClass {
   Blinker _blinker;
   Config _config;
   Time _time;
+  Uptime _uptime;
+  
   AsyncMqttClient _mqttClient;
   LoopFunction _loopFunction;
 

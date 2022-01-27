@@ -47,7 +47,6 @@ class BootStandalone : public Boot {
   void loop();
 
  private:
-  Uptime _uptime;
   Timer _statsTimer;
   ExponentialBackoffTimer _mqttReconnectTimer;
   #ifdef ESP32
