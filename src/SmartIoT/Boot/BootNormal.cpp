@@ -203,7 +203,7 @@ void BootNormal::loop() {
 }
 
 void BootNormal::_publish_stats(){
-    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(5)); 
+    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(7)); 
     JsonObject statsData = jsonBuffer.to<JsonObject>();
 
     Interface::get().getLogger() << F("〽 Sending statistics...") << endl;
