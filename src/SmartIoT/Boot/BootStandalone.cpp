@@ -159,6 +159,7 @@ void BootStandalone::_publish_stats(){
     statsData[F("uptime")] = static_cast<unsigned long> (upsec);
 
     if(Interface::get().getTime().isReady()){ //NTP synched
+      Interface::get().getLogger() << F("  • Boot Date: ") << Interface::get().getTime().getIsoBootTime() << endl;
       statsData[F("boot_date")] = Interface::get().getTime().getBootTime();
     }
 

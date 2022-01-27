@@ -228,6 +228,7 @@ void BootNormal::_publish_stats(){
     statsData[F("uptime")] = static_cast<unsigned long> (upsec);
 
     if(Interface::get().getTime().isReady()){ //NTP synched
+      Interface::get().getLogger() << F("  • Boot Date: ") << Interface::get().getTime().getIsoBootTime() << endl;
       statsData[F("boot_date")] = Interface::get().getTime().getBootTime();
     }
 
@@ -539,8 +540,8 @@ bool BootNormal::_publish_advertise() {
   stats[F("stats_interval")] = Interface::get().getConfig().get().deviceStatsInterval+5;  
   uint8_t quality = Helpers::rssiToPercentage(WiFi.RSSI());
   stats[F("wifi_quality")] = quality;
-  _uptime.update();
-  stats[F("uptime")] = static_cast<unsigned long> (_uptime.getSeconds());
+  Interface::get().getUpTime().update();
+  stats[F("uptime")] = static_cast<unsigned long> (Interface::get().getUpTime().getSeconds());
   uint32_t freeMem= ESP.getFreeHeap();
   stats[F("freeMem")] = freeMem;
   uint16_t packetId;

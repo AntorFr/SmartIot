@@ -134,7 +134,7 @@ class SmartIotNode {
     return 0;
   }
 
-    static SmartIotNode* find(const char* name, const char* type) {
+  static SmartIotNode* find(const char* name, const char* type) {
     for (SmartIotNode* iNode : SmartIotNode::nodes) {
       if ((strcmp(name, iNode->getName()) == 0) && (strcmp(type, iNode->getType()) == 0)) return iNode;
     }

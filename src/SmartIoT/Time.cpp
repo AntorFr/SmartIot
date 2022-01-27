@@ -14,7 +14,7 @@ void Time::_time_is_set(){
     time_ready=true;
     _sync();
     Interface::get().getLogger() << F("✔ NTP time synchronized. ") << endl;
-    Interface::get().getLogger() << F(" Date: ") << ctime(&_now) << endl;
+    Interface::get().getLogger() << F(" Date: ") << ctime(&_now);
     Interface::get().event.type = SmartIotEventType::NTP_SYNCHRONIZED;
     Interface::get().eventHandler(Interface::get().event);
 
@@ -22,8 +22,6 @@ void Time::_time_is_set(){
     time_t upsec = Interface::get().getUpTime().getSeconds();
     _boot = _now - upsec;
     _boot_tm = localtime(&_boot);
-
-    Interface::get().getLogger() << F("Boot Date: ") << getIsoBootTime() << endl;
 }
 
 void Time::_sync(){
