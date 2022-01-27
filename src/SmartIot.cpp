@@ -40,6 +40,7 @@ SmartIotClass::SmartIotClass()
   Interface::get()._logger = &_logger;
   Interface::get()._config = &_config;
   Interface::get()._time = &_time;
+  Interface::get()._uptime = &_uptime;
 
   DeviceId::generate();
 }

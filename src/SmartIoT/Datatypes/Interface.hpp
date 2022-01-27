@@ -9,6 +9,7 @@
 #include "../Limits.hpp"
 #include "./Callbacks.hpp"
 #include "../Time.hpp"
+#include "../Uptime.hpp"
 #include "../../SmartIotBootMode.hpp"
 #include "../../SmartIotNode.hpp"
 #include "../../SendingPromise.hpp"
@@ -22,6 +23,7 @@ class Time;
 class LoopFunction;
 class SendingPromise;
 class SmartIotClass;
+class Uptime;
 
 class InterfaceData {
   friend SmartIotClass;
@@ -78,8 +80,10 @@ class InterfaceData {
   SendingPromise& getSendingPromise() { return *_sendingPromise; }
   LoopFunction& getLoop() { return *_loopFunction; }
   Time& getTime() {return *_time;}
+  Uptime& getUpTime() {return *_uptime;}
 
  private:
+  Uptime* _uptime;
   Logger* _logger;
   Blinker* _blinker;
   Config* _config;
