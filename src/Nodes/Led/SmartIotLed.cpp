@@ -238,7 +238,7 @@ bool SmartIotLed::loadNodeConfig(ArduinoJson::JsonObject& data){
         for (JsonVariant item : data["objects"].as<JsonArray>()) {
             JsonObject objData = item.as<JsonObject>();
             if (objData.containsKey("nb_led") && objData.containsKey("name") && objData.containsKey("start_led") ) {
-                LedObject* obj = createObject(objData["start_led"],objData["nb_led"],objData["name"].as<const char*>());
+                LedObject* obj = createObject(objData["start_led"],objData["nb_led"],strdup(objData["name"].as<const char*>()));
                 if(objData.containsKey("audio_pin")) {
                     obj->addAudio(objData["audio_pin"]);  
                 }
