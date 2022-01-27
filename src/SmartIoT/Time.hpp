@@ -17,7 +17,7 @@ class Time {
    char* getDate();
    char* getIso();
    char* getIsoBootTime();
-   time_t getBootTime() {if(time_ready) {return _boot} else { return 0;}}
+   time_t getBootTime() {if(time_ready) {return _boot;} else { return 0;}}
    void getStrfTime(char* ptr, size_t maxsize, const char* format); //https://www.cplusplus.com/reference/ctime/strftime/
    tm* getTm();
    
