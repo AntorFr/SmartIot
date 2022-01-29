@@ -8,6 +8,8 @@
 #include "../Config.hpp"
 #include "../Limits.hpp"
 #include "./Callbacks.hpp"
+#include "../Time.hpp"
+#include "../Uptime.hpp"
 #include "../../SmartIotBootMode.hpp"
 #include "../../SmartIotNode.hpp"
 #include "../../SendingPromise.hpp"
@@ -17,9 +19,11 @@ namespace SmartIotInternals {
 class Logger;
 class Blinker;
 class Config;
+class Time;
 class LoopFunction;
 class SendingPromise;
 class SmartIotClass;
+class Uptime;
 
 class InterfaceData {
   friend SmartIotClass;
@@ -57,8 +61,6 @@ class InterfaceData {
     bool resetFlag;
   } reset;
 
-
-
   bool disable;
   bool flaggedForSleep;
 
@@ -77,14 +79,18 @@ class InterfaceData {
   AsyncMqttClient& getMqttClient() { return *_mqttClient; }
   SendingPromise& getSendingPromise() { return *_sendingPromise; }
   LoopFunction& getLoop() { return *_loopFunction; }
+  Time& getTime() {return *_time;}
+  Uptime& getUpTime() {return *_uptime;}
 
  private:
+  Uptime* _uptime;
   Logger* _logger;
   Blinker* _blinker;
   Config* _config;
   AsyncMqttClient* _mqttClient;
   SendingPromise* _sendingPromise;
   LoopFunction* _loopFunction;
+  Time* _time;
 };
 
 class Interface {

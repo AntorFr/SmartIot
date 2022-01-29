@@ -15,6 +15,7 @@
 #include "SmartIot/Logger.hpp"
 #include "SmartIot/Config.hpp"
 #include "SmartIot/Blinker.hpp"
+#include "SmartIot/Time.hpp"
 #include "SmartIot/LoopFunction.hpp"
 
 #include "SendingPromise.hpp"
@@ -87,6 +88,7 @@ class SmartIotClass {
   static const ConfigStruct& getConfiguration();
   AsyncMqttClient& getMqttClient();
   Logger& getLogger();
+  Time& getTime();
   static void prepareToSleep();
   #ifdef ESP32
   static void doDeepSleep(uint64_t time_us = 0);
@@ -110,6 +112,9 @@ class SmartIotClass {
   Logger _logger;
   Blinker _blinker;
   Config _config;
+  Time _time;
+  Uptime _uptime;
+  
   AsyncMqttClient _mqttClient;
   LoopFunction _loopFunction;
 

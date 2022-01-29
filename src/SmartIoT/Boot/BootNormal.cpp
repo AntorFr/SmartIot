@@ -107,6 +107,8 @@ void BootNormal::setup() {
 #if SMARTIOT_CONFIG
   ResetHandler::Attach();
 #endif
+  //Config NTP
+  Interface::get().getTime().init();
 
   Interface::get().getConfig().log();
 
@@ -201,7 +203,7 @@ void BootNormal::loop() {
 }
 
 void BootNormal::_publish_stats(){
-    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(5)); 
+    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(10)); 
     JsonObject statsData = jsonBuffer.to<JsonObject>();
 
     Interface::get().getLogger() << F("〽 Sending statistics...") << endl;
@@ -217,17 +219,30 @@ void BootNormal::_publish_stats(){
     Interface::get().getLogger() << F("  • Wi-Fi signal quality: ") << qualityStr << F("%") << endl;   
     statsData[F("wifi_quality")] = quality;
 
-    _uptime.update();
+    Interface::get().getUpTime().update();
+    uint64_t upsec = Interface::get().getUpTime().getSeconds();
     char uptimeStr[20 + 1];
-    itoa(_uptime.getSeconds(), uptimeStr, 10);
+    
+    itoa(upsec, uptimeStr, 10);
     Interface::get().getLogger() << F("  • Uptime: ") << uptimeStr << F("s") << endl;
-    statsData[F("uptime")] = static_cast<unsigned long> (_uptime.getSeconds());
+    statsData[F("uptime")] = static_cast<unsigned long> (upsec);
+
+    if(Interface::get().getTime().isReady()){ //NTP synched
+      Interface::get().getLogger() << F("  • Boot Date: ") << Interface::get().getTime().getIsoBootTime() << endl;
+      statsData[F("boot_date")] = Interface::get().getTime().getBootTime();
+    }
 
     uint32_t freeMem= ESP.getFreeHeap();
     char freeMemStr[20 + 1];
-    itoa(ESP.getFreeHeap(), freeMemStr, 10);
+    itoa(freeMem, freeMemStr, 10);
     Interface::get().getLogger() << F("  • Free heap memory : ") << freeMemStr << endl;
     statsData[F("freeMem")] = freeMem;
+
+    uint32_t freeBlock= ESP.getMaxFreeBlockSize();
+    char freeBlockStr[20 + 1];
+    itoa(freeBlock, freeBlockStr, 10);
+    Interface::get().getLogger() << F("  • Free block size memory : ") << freeBlockStr << endl;
+    statsData[F("freeBlock")] = freeBlock;
 
     serializeJson(statsData,(char*) _jsonMessageBuffer.get(),JSON_MSG_BUFFER);
 
@@ -525,8 +540,8 @@ bool BootNormal::_publish_advertise() {
   stats[F("stats_interval")] = Interface::get().getConfig().get().deviceStatsInterval+5;  
   uint8_t quality = Helpers::rssiToPercentage(WiFi.RSSI());
   stats[F("wifi_quality")] = quality;
-  _uptime.update();
-  stats[F("uptime")] = static_cast<unsigned long> (_uptime.getSeconds());
+  Interface::get().getUpTime().update();
+  stats[F("uptime")] = static_cast<unsigned long> (Interface::get().getUpTime().getSeconds());
   uint32_t freeMem= ESP.getFreeHeap();
   stats[F("freeMem")] = freeMem;
   uint16_t packetId;

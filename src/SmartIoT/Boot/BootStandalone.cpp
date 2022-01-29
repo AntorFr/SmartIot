@@ -84,6 +84,9 @@ void BootStandalone::setup() {
 #if SMARTIOT_CONFIG
   ResetHandler::Attach();
 #endif
+  
+  //Config NTP
+  Interface::get().getTime().init();
 
   _wifiConnect();
 }
@@ -131,7 +134,7 @@ void BootStandalone::loop() {
 }
 
 void BootStandalone::_publish_stats(){
-    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(5)); 
+    DynamicJsonDocument jsonBuffer (JSON_OBJECT_SIZE(10)); 
     JsonObject statsData = jsonBuffer.to<JsonObject>();
 
     Interface::get().getLogger() << F("〽 Sending statistics...") << endl;
@@ -147,17 +150,30 @@ void BootStandalone::_publish_stats(){
     Interface::get().getLogger() << F("  • Wi-Fi signal quality: ") << qualityStr << F("%") << endl;   
     statsData[F("wifi_quality")] = quality;
 
-    _uptime.update();
+    Interface::get().getUpTime().update();
+    uint64_t upsec = Interface::get().getUpTime().getSeconds();
+
     char uptimeStr[20 + 1];
-    itoa(_uptime.getSeconds(), uptimeStr, 10);
+    itoa(upsec, uptimeStr, 10);
     Interface::get().getLogger() << F("  • Uptime: ") << uptimeStr << F("s") << endl;
-    statsData[F("uptime")] = static_cast<unsigned long> (_uptime.getSeconds());
+    statsData[F("uptime")] = static_cast<unsigned long> (upsec);
+
+    if(Interface::get().getTime().isReady()){ //NTP synched
+      Interface::get().getLogger() << F("  • Boot Date: ") << Interface::get().getTime().getIsoBootTime() << endl;
+      statsData[F("boot_date")] = Interface::get().getTime().getBootTime();
+    }
 
     uint32_t freeMem= ESP.getFreeHeap();
     char freeMemStr[20 + 1];
-    itoa(ESP.getFreeHeap(), freeMemStr, 10);
+    itoa(freeMem, freeMemStr, 10);
     Interface::get().getLogger() << F("  • Free heap memory : ") << freeMemStr << endl;
     statsData[F("freeMem")] = freeMem;
+
+    uint32_t freeBlock= ESP.getMaxFreeBlockSize();
+    char freeBlockStr[20 + 1];
+    itoa(freeBlock, freeBlockStr, 10);
+    Interface::get().getLogger() << F("  • Free block size memory : ") << freeBlockStr << endl;
+    statsData[F("freeBlock")] = freeBlock;
 
     serializeJson(statsData,(char*) _jsonMessageBuffer.get(),JSON_MSG_BUFFER);
 

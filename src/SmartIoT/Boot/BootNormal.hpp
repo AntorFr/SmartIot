@@ -61,7 +61,7 @@ class BootNormal : public Boot {
     size_t currentArrayNodeIndex;
     size_t currentPropertyIndex;
   } _advertisementProgress;
-  Uptime _uptime;
+ 
   Timer _statsTimer;
   ExponentialBackoffTimer _mqttReconnectTimer;
   bool _setupFunctionCalled;
