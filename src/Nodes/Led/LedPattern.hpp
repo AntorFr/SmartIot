@@ -8,19 +8,19 @@ class LedObject;
 namespace SmartIotInternals {
     class LedPattern {
         friend LedObject;
-
         public:
-        LedPattern(const LedObject*  obj);
-        bool toShow() {return _show;}
-        void show() {_show=true;}
-        void showed() {_show=false;}
+            LedPattern(const LedObject*  obj);
+            virtual ~LedPattern() {}
+            bool toShow() {return _show;}
+            void show() {_show=true;}
+            void showed() {_show=false;}
 
         protected:
             virtual void init() {};
             virtual void display() {};
-            void displayEffect();
             void addGlitter(fract8 chanceOfGlitter) {_chanceOfGlitter = chanceOfGlitter;}
             void addPowerCut(fract16 chanceOfPowercut){_chanceOfPowercut = _chanceOfPowercut;}
+            void displayEffect();
             uint16_t _nbLed;
             CRGB* _leds;
             const LedObject* _obj;

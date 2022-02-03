@@ -43,6 +43,8 @@ class LedObject {
     protected:
         uint16_t _nbLed;
         CRGB* _leds;
+        std::vector<String> _autoplayList;
+        std::map<String, std::function<SmartIotInternals::LedPattern*(LedObject* ledObj)>> _patterns;
 
     private:
         const char* _name;
@@ -51,13 +53,11 @@ class LedObject {
         bool _state;
         bool _autoplay;
         uint8_t _autoplayDuration; // seconds
-        std::vector<String> _autoplayList;
         Ticker _autoPlayTicker;
         CRGB _color;
-        String _pattern;
         CRGBPalette16 _gCurrentPalette;
         CRGBPalette16 _gTargetPalette;
-
+        String _pattern;
         
         void chooseNextColorPalette();
         void _setRandomPattern();
@@ -72,8 +72,6 @@ class LedObject {
         void showed();
         bool toShow();
         void _publishStatus(ArduinoJson::JsonObject& data);
-
-        std::map<String, std::function<SmartIotInternals::LedPattern*(LedObject* ledObj)>> _patterns;
 };
 
 

@@ -32,6 +32,9 @@ class SmartIotLed : public SmartIotNode  {
     uint8_t getBrightness();
     uint8_t getSpeed();
 
+    static bool setPattern(const char* patrn_name,const char* obj_name);
+    static bool setPattern(const char* patrn_name);
+
     static LedObject* findObject(const char* name);
     static std::vector<LedObject*> objects;
 
@@ -59,7 +62,7 @@ class SmartIotLed : public SmartIotNode  {
         virtual bool loadNodeConfig(ArduinoJson::JsonObject& data) override;
         //void onReadyToOperate();
         void publish_stats() override;
-        uint8_t _nbObjects(){ return static_cast<uint8_t>(SmartIotLed::objects.size());} 
+        static uint8_t _nbObjects(){ return static_cast<uint8_t>(SmartIotLed::objects.size());} 
         
 
     private:
