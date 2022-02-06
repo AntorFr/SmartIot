@@ -1,0 +1,32 @@
+{
+  "wifi": {
+    "ssid": "ssid",
+    "password": "password"
+  },
+  "mqtt": {
+    "host": "192.168.1.10",
+    "port": 1883,
+    "auth": true,
+    "username": "username",
+    "password": "password",
+    "base_topic": "home/"
+  },
+  "ota": {
+    "enabled": true
+  },
+  "device_stats_interval": 300,
+  "device_id": "test",
+  "device_name": "test",
+  "settings": {},
+  "nodes": {
+    "led": {
+      "fps": 60,
+      "node_name":"test",
+      "device_id": "test", 
+      "name": "test",
+      "auto_play": true,
+      "auto_play_duration": 60,
+      "play_list":["clock","star"]
+    }
+  }
+}
