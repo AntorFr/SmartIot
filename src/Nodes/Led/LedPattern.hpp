@@ -8,19 +8,19 @@ class LedObject;
 namespace SmartIotInternals {
     class LedPattern {
         friend LedObject;
-
         public:
-        LedPattern(const LedObject*  obj);
-        bool toShow() {return _show;}
-        void show() {_show=true;}
-        void showed() {_show=false;}
+            LedPattern(LedObject* const obj);
+            virtual ~LedPattern() {}
+            bool toShow() {return _show;}
+            void show() {_show=true;}
+            void showed() {_show=false;}
 
         protected:
             virtual void init() {};
             virtual void display() {};
-            void displayEffect();
             void addGlitter(fract8 chanceOfGlitter) {_chanceOfGlitter = chanceOfGlitter;}
             void addPowerCut(fract16 chanceOfPowercut){_chanceOfPowercut = _chanceOfPowercut;}
+            void displayEffect();
             uint16_t _nbLed;
             CRGB* _leds;
             const LedObject* _obj;
@@ -37,7 +37,7 @@ namespace SmartIotInternals {
     class OffPattern : public LedPattern  {
         friend LedObject;
         public:
-        OffPattern(const LedObject* obj):LedPattern(obj){}
+        OffPattern(LedObject* const obj):LedPattern(obj){}
         protected:
             void init() override;
     };
@@ -45,7 +45,7 @@ namespace SmartIotInternals {
         friend LedObject;
 
         public:
-        ColorPattern(const LedObject* obj):LedPattern(obj){}
+        ColorPattern(LedObject* const obj):LedPattern(obj){}
 
         protected:
             void init() override;
@@ -54,7 +54,7 @@ namespace SmartIotInternals {
     class BlinkPattern : public LedPattern  {
         friend LedObject;
         public:
-        BlinkPattern(const LedObject* obj):LedPattern(obj),_blink(false){}
+        BlinkPattern(LedObject* const obj):LedPattern(obj),_blink(false){}
 
         protected:
             void init() override;
@@ -66,56 +66,56 @@ namespace SmartIotInternals {
     class WipePattern : public LedPattern  {
         friend LedObject;
         public:
-        WipePattern(const LedObject* obj):LedPattern(obj){}
+        WipePattern(LedObject* const obj):LedPattern(obj){}
         protected:
             void display() override;
     };
     class LaserPattern : public LedPattern  {
         friend LedObject;
         public:
-        LaserPattern(const LedObject* obj):LedPattern(obj){}
+        LaserPattern(LedObject* const obj):LedPattern(obj){}
         protected:
             void display() override;
     };
     class BreathePattern : public LedPattern  {
         friend LedObject;
         public:
-        BreathePattern(const LedObject* obj):LedPattern(obj){}
+        BreathePattern(LedObject* const obj):LedPattern(obj){}
         protected:
             void display() override;
     };
     class RainbowPattern : public LedPattern  {
         friend LedObject;
         public:
-        RainbowPattern(const LedObject* obj):LedPattern(obj){}
+        RainbowPattern(LedObject* const obj):LedPattern(obj){}
         protected:
             void display() override;
     };
     class K2000Pattern : public LedPattern  {
         friend LedObject;
         public:
-        K2000Pattern(const LedObject* obj):LedPattern(obj){}
+        K2000Pattern(LedObject* const obj):LedPattern(obj){}
         protected:
             void display() override;
     };
     class ComputerPattern : public LedPattern  {
         friend LedObject;
         public:
-        ComputerPattern(const LedObject* obj):LedPattern(obj){}
+        ComputerPattern(LedObject* const obj):LedPattern(obj){}
         protected:
             void display() override;
     };
     class ConfettiPattern : public LedPattern  {
         friend LedObject;
         public:
-        ConfettiPattern(const LedObject* obj):LedPattern(obj){}
+        ConfettiPattern(LedObject* const obj):LedPattern(obj){}
         protected:
             void display() override;
     };
     class StarPattern : public LedPattern  {
         friend LedObject;
         public:
-        StarPattern(const LedObject* obj):LedPattern(obj),_stars(nullptr){}
+        StarPattern(LedObject* const obj):LedPattern(obj),_stars(nullptr){}
         protected:
             uint8_t* _stars;
             void init() override;
@@ -124,7 +124,7 @@ namespace SmartIotInternals {
     class PridePattern : public LedPattern  {
         friend LedObject;
         public:
-        PridePattern(const LedObject* obj):LedPattern(obj),sPseudotime(0),sLastMillis(0),sHue16(0){}
+        PridePattern(LedObject* const obj):LedPattern(obj),sPseudotime(0),sLastMillis(0),sHue16(0){}
         protected:
             void display() override;
         private:
@@ -135,7 +135,7 @@ namespace SmartIotInternals {
     class TwinkleFoxPattern : public LedPattern  {
         friend LedObject;
         public:
-            TwinkleFoxPattern(const LedObject* obj, CRGBPalette16 palette):LedPattern(obj),_speed(4),_density(5),gBackgroundColor(CRGB::Black),_autoBGColor(false),_coolLikeIncandescent(true){gCurrentPalette = palette;}
+            TwinkleFoxPattern(LedObject* const obj, CRGBPalette16 palette):LedPattern(obj),_speed(4),_density(5),gBackgroundColor(CRGB::Black),_autoBGColor(false),_coolLikeIncandescent(true){gCurrentPalette = palette;}
         protected:
             void display() override;
             CRGB computeOneTwinkle( uint32_t ms, uint8_t salt);
@@ -152,7 +152,7 @@ namespace SmartIotInternals {
     class TwinklePattern : public LedPattern  {
         friend LedObject;
         public:
-            TwinklePattern(const LedObject* obj, CRGBPalette16 palette):LedPattern(obj),_startingBritghtness(64),_fadeInSpeed(32),_fadeOutSpeed(20),_density(255){ gCurrentPalette = palette;}
+            TwinklePattern(LedObject* const obj, CRGBPalette16 palette):LedPattern(obj),_startingBritghtness(64),_fadeInSpeed(32),_fadeOutSpeed(20),_density(255){ gCurrentPalette = palette;}
         protected:
             void init() override;
             void display() override;
@@ -175,14 +175,14 @@ namespace SmartIotInternals {
     class RainbowSoundPattern : public LedPattern  {
         friend LedObject;
         public:
-        RainbowSoundPattern(const LedObject* obj):LedPattern(obj){}
+        RainbowSoundPattern(LedObject* const obj):LedPattern(obj){}
         protected:
             void display() override;
     };
     class HeatMapPattern : public LedPattern  {
         friend LedObject;
         public:
-        HeatMapPattern(const LedObject* obj,CRGBPalette16 palette, bool up):LedPattern(obj),_cooling(49),_sparking(60){gCurrentPalette = palette; _up = up;}
+        HeatMapPattern(LedObject* const obj,CRGBPalette16 palette, bool up):LedPattern(obj),_cooling(49),_sparking(60){gCurrentPalette = palette; _up = up;}
         protected:
             void init() override;
             void display() override;
@@ -197,7 +197,7 @@ namespace SmartIotInternals {
     class ColorWavePattern : public LedPattern  {
         friend LedObject;
         public:
-        ColorWavePattern(const LedObject* obj,CRGBPalette16 palette):LedPattern(obj),sPseudotime(0),sLastMillis(0),sHue16(0){gCurrentPalette = palette;}
+        ColorWavePattern(LedObject* const obj,CRGBPalette16 palette):LedPattern(obj),sPseudotime(0),sLastMillis(0),sHue16(0){gCurrentPalette = palette;}
         protected:
             void display() override;
         private:
@@ -209,7 +209,7 @@ namespace SmartIotInternals {
     class SinelonPattern : public LedPattern  {
         friend LedObject;
         public:
-        SinelonPattern(const LedObject* obj):LedPattern(obj),prevpos(0){}
+        SinelonPattern(LedObject* const obj):LedPattern(obj),prevpos(0){}
         protected:
             void display() override;
         private:

@@ -2,7 +2,7 @@
 
 using namespace SmartIotInternals;
 
-LedPattern::LedPattern(const LedObject*  obj)
+LedPattern::LedPattern(LedObject* const obj)
     :_show(false),_pwrCutMem(0),_chanceOfGlitter(0),_chanceOfPowercut(0)
 {
     _nbLed = obj->_nbLed;
@@ -332,13 +332,13 @@ void RainbowSoundPattern::display()
     displayEffect();
 }
 
-CRGB TwinklePattern::makeBrighter( const CRGB& color, fract8 howMuchBrighter)
+CRGB TwinklePattern::makeBrighter(const CRGB& color, fract8 howMuchBrighter)
 {
   CRGB incrementalColor = color;
   incrementalColor.nscale8( howMuchBrighter);
   return color + incrementalColor;
 }
-CRGB TwinklePattern::makeDarker( const CRGB& color, fract8 howMuchDarker)
+CRGB TwinklePattern::makeDarker(const CRGB& color, fract8 howMuchDarker)
 {
   CRGB newcolor = color;
   newcolor.nscale8( 255 - howMuchDarker);

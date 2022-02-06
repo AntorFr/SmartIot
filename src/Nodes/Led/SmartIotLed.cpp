@@ -110,6 +110,8 @@ bool SmartIotLed::ledCmdHandler(const SmartIotRange& range, const String& value)
     return true;
 }
 
+
+
 bool SmartIotLed::ledCmdHandler(const String& json){
     DynamicJsonDocument parseJsonBuff (50+ JSON_OBJECT_SIZE(10+_nbObjects()) + (_nbObjects()) * ( JSON_OBJECT_SIZE(10)+JSON_ARRAY_SIZE(3))); 
     DeserializationError error = deserializeJson(parseJsonBuff, json);
@@ -183,6 +185,27 @@ void SmartIotLed::loop(){
         iObj->audioLoop();
     }
 }
+
+bool SmartIotLed::setPattern(const char* patrn_name){
+    if(_nbObjects()>1){ 
+        Interface::get().getLogger() << F("✖ use setPattern(patrn_name,obj_name) if you have more than one object") << endl;
+        return false;
+    }
+    LedObject* obj = SmartIotLed::objects.front();
+    obj->setPattern(String(patrn_name));
+    return true;
+}
+
+bool SmartIotLed::setPattern(const char* patrn_name,const char* obj_name){
+    LedObject* obj = SmartIotLed::findObject(obj_name);
+     if(obj){
+         obj->setPattern(String(patrn_name));
+         return true;
+     } else {
+         return false;
+     }
+}
+
 
 
 void SmartIotLed::display(){

@@ -12,11 +12,11 @@ class Time {
    Time();
    void init();
    bool isReady() {return time_ready; }
-   char* getTime();
-   char* getShortTime();
-   char* getDate();
-   char* getIso();
-   char* getIsoBootTime();
+   const char* getTime();
+   const char* getShortTime();
+   const char* getDate();
+   const char* getIso();
+   const char* getIsoBootTime();
    time_t getBootTime() {if(time_ready) {return _boot;} else { return 0;}}
    void getStrfTime(char* ptr, size_t maxsize, const char* format); //https://www.cplusplus.com/reference/ctime/strftime/
    tm* getTm();
