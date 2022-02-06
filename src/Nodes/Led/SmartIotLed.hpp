@@ -36,7 +36,6 @@ class SmartIotLed : public SmartIotNode  {
     static bool setPattern(const char* patrn_name);
 
     static LedObject* findObject(const char* name);
-    static std::vector<LedObject*> objects;
 
     bool ledCmdHandler(const String& json);
     bool ledCmdHandler(const SmartIotRange& range,const String& value);
@@ -62,8 +61,10 @@ class SmartIotLed : public SmartIotNode  {
         virtual bool loadNodeConfig(ArduinoJson::JsonObject& data) override;
         //void onReadyToOperate();
         void publish_stats() override;
-        static uint8_t _nbObjects(){ return static_cast<uint8_t>(SmartIotLed::objects.size());} 
         
+        static uint8_t _nbObjects(){ return static_cast<uint8_t>(SmartIotLed::objects.size());} 
+        static std::vector<LedObject*> objects;
+        CRGB* _leds;       
 
     private:
         void ledObjCmdHandler(ArduinoJson::JsonObject& data,LedObject* obj,bool global = false);
@@ -76,7 +77,6 @@ class SmartIotLed : public SmartIotNode  {
         uint8_t _fps;  // 60 here you can control the speed.
         Ticker _display;
         uint16_t _nbLed;
-        CRGB* _leds;
         bool _state;
         uint8_t _brightness;
 

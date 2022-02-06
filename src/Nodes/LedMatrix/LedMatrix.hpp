@@ -2,6 +2,7 @@
 
 #include <map>
 #include "SmartIotLedMatrix.hpp"
+#include "LedMatrixPattern.hpp"
 #include "../Led/Led.hpp"
 
 class SmartIotLedMatrix;
@@ -12,12 +13,11 @@ namespace SmartIotInternals {
 }
 
 class LedMatrix: public LedObject {
-    friend SmartIotLedMatrix;
-    friend LedMatrixPattern;
     public:
-        LedMatrix(const uint16_t firstPos,const char* name,cLEDMatrixBase* matrix);
+        LedMatrix(const uint16_t firstPos,const char* name,cLEDMatrixBase* const matrix);
+        cLEDMatrixBase* getMatrix(){return _matrix;};
     protected:
-        cLEDMatrixBase* _matrix;
+        cLEDMatrixBase* const _matrix;
 
 };
 

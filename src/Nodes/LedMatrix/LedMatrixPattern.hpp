@@ -1,29 +1,35 @@
 #pragma once
 
 
-//#include "../Led/GradientPalettes.hpp"
+
+
 #include "LedMatrix.hpp"
+#include "../Led/Led.hpp"
+#include "../Led/GradientPalettes.hpp"
+
 class LedMatrix;
+class LedObject;
 
 namespace SmartIotInternals {
     class LedPattern;
     class LedMatrixPattern: public LedPattern {
         friend LedMatrix;
         public:
-            LedMatrixPattern(const LedMatrix*  obj):LedPattern(obj),_matrix(obj->_matrix){};
+            LedMatrixPattern(LedMatrix* const  obj);
         protected:
-            cLEDMatrixBase* _matrix;
+            cLEDMatrixBase* const _matrix;
         };
 
     class ClockPattern : public LedMatrixPattern  {
-        friend LedObject;
+        friend LedMatrix;
         public:
-        ClockPattern(const LedMatrix* obj):LedMatrixPattern(obj){};
+        ClockPattern(LedMatrix* const obj):LedMatrixPattern(obj){};
         protected:
             void init() override;
             void display() override;
             cLEDText _cTxt;
-            unsigned char _txt[30];
+            unsigned char _txt[5+1];
+            uint8_t minutes; 
     };
 
 } // namespace SmartIotInternals

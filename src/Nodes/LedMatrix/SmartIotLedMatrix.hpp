@@ -7,6 +7,7 @@
 #define INTERRUPT_THRESHOLD 1
 
 
+
 #include <FastLED.h>
 #include <LEDMatrix.h>
 #include <LEDText.h>
@@ -30,23 +31,24 @@ namespace SmartIotInternals {
 
 class SmartIotLedMatrix : public SmartIotLed  {
     public:
-    SmartIotLedMatrix(const char* id, const char* name, const char* type = "ledMatrix"):SmartIotLed(id,name,type){};
-    LedObject* createObject(const uint16_t firstPos,const char* name,cLEDMatrixBase* matrix);
+    SmartIotLedMatrix(const char* id, const char* name, const char* type = "ledMatrix"):SmartIotLed(id,name,type),_matrix(nullptr){};
+    LedObject* createObject(const uint16_t firstPos,const char* name);
+    virtual bool loadNodeConfig(ArduinoJson::JsonObject& data) override;
     
     template<int16_t tWidth, int16_t tHeight, MatrixType_t tMType> 
     void setupMatrix(const char* name){ 
         _matrix = new cLEDMatrix<tWidth, -tHeight, tMType>();
-        createObject(0,name,_matrix);
+        createObject(0,name);
     }
 
-    cLEDMatrixBase* getMatrix() {return _matrix;}
+    cLEDMatrixBase* getMatrix() {return _matrix;};
 
     protected:
-
+    cLEDMatrixBase* _matrix;
         
         
     private:
-        cLEDMatrixBase* _matrix;
+        
 
 };
 

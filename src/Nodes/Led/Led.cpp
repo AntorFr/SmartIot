@@ -109,7 +109,7 @@ void LedObject::_setRandomPattern(){
     //setPattern(item->first);
     if(_state) {
         auto item = _autoplayList.begin();
-        std::advance( item, random8(_autoplayList.size()-1));
+        std::advance( item, random8(_autoplayList.size()));
         setPattern(*item);
     }
     

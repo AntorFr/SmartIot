@@ -29,32 +29,32 @@ void Time::_sync(){
     _tm = localtime(&_now);
 }
 
-char* Time::getTime(){
+const char* Time::getTime(){
     _sync();
     strftime(_buf,30,"%T",_tm);
     return _buf;
 }
 
-char* Time::getShortTime(){
+const char* Time::getShortTime(){
     _sync();
     strftime(_buf,30,"%R",_tm);
     return _buf;
 }
 
-char* Time::getDate(){
+const char* Time::getDate(){
     _sync();
     strftime(_buf,30,"%d/%m/%Y",_tm);
     return _buf;
 }
 
-char* Time::getIso(){
+const char* Time::getIso(){
     _sync();
     strftime(_buf,30,"%F %T",_tm); //2001-08-23 14:55:02
     return _buf;
 
 }
 
-char* Time::getIsoBootTime(){
+const char* Time::getIsoBootTime(){
     if(time_ready){
         strftime(_buf,30,"%F %T",_boot_tm); //2001-08-23 14:55:02
         return _buf; 
