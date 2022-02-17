@@ -1,9 +1,11 @@
 #pragma once
 
 #include <time.h>
-#include <coredecls.h>                  // settimeofday_cb()
-#include <TZ.h>
-
+#ifdef ESP8266
+  #include <coredecls.h>  // settimeofday_cb()
+  #include <TZ.h>
+#endif
+                
 #include "Datatypes/Interface.hpp"
 
 namespace SmartIotInternals {

@@ -36,8 +36,11 @@ void SmartIotLed::setup(){
     }
     _leds =new CRGB [_nbLed];
 
+    #ifdef ESP32
+    _display.attach_ms(1000/_fps,+[](SmartIotLed* led) { led->display(); }, this);
+    #elif defined(ESP8266)
     _display.attach_ms_scheduled(1000/_fps,std::bind(&SmartIotLed::display, this));
-    //_display.attach_ms(1000/_fps,std::bind(&SmartIotLed::display, this));
+    #endif // ESP32
 
     Interface::get().getLogger() << F(" Led node setuped (") << _nbLed << F(" leds)") << endl;
 
@@ -291,7 +294,11 @@ void SmartIotLed::turnOn(){
     for (LedObject* iObj : SmartIotLed::objects) {
         iObj->initPattern();
     }
+    #ifdef ESP32
+    _display.attach_ms(1000/_fps,+[](SmartIotLed* led) { led->display(); }, this);
+    #elif defined(ESP8266)
     _display.attach_ms_scheduled(1000/_fps,std::bind(&SmartIotLed::display, this));
+    #endif // ESP32
 }
 
 void SmartIotLed::_publishStatus(){

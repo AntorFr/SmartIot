@@ -189,7 +189,11 @@ void LedObject::setAutoPlay(bool autoplay) {
     
     if(_autoplay) {
         _setRandomPattern();
+        #ifdef ESP32
+        _autoPlayTicker.attach(_autoplayDuration,+[](LedObject* obj) { obj->_setRandomPattern(); }, this);
+        #elif defined(ESP8266)
         _autoPlayTicker.attach_scheduled(_autoplayDuration,std::bind(&LedObject::_setRandomPattern, this));
+        #endif // ESP32
     } else {
          _autoPlayTicker.detach();
     }
