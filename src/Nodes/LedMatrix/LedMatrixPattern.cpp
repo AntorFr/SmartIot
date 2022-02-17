@@ -9,7 +9,7 @@ LedMatrixPattern::LedMatrixPattern(LedMatrix* const  obj)
     
 }
 
-void ClockPattern::init(){
+void RainbowClockPattern::init(){
     _cTxt.SetFont(MatriseFontData);
     _cTxt.Init(_matrix, _matrix->Width(), _cTxt.FontHeight() + 1, 0, 0);
 
@@ -18,7 +18,7 @@ void ClockPattern::init(){
     show();
 }
 
-void ClockPattern::display(){
+void RainbowClockPattern::display(){
     uint8_t min = Interface::get().getTime().getTm()->tm_min;
 
     uint8_t hue = beat8(_obj->getSpeed()/3);
@@ -36,5 +36,30 @@ void ClockPattern::display(){
     _cTxt.UpdateText();
 
     show();
+    displayEffect();
+}
+
+void ClockPattern::init(){
+    _cTxt.SetFont(MatriseFontData);
+    _cTxt.Init(_matrix, _matrix->Width(), _cTxt.FontHeight() + 1, 0, 0);
+
+    fill_solid(_leds,_nbLed, CRGB::Black); 
+    minutes = 100;
+    show();
+}
+
+void ClockPattern::display(){
+    uint8_t min = Interface::get().getTime().getTm()->tm_min;
+
+    if (minutes!=min || minutes==100){
+        strcpy((char *)(_txt), Interface::get().getTime().getShortTime());
+        minutes=min;
+
+        _cTxt.SetText(_txt, sizeof(_txt) - 1);
+        _cTxt.SetTextColrOptions(COLR_RGB,_obj->getColor().r,_obj->getColor().g,_obj->getColor().b);
+        _cTxt.UpdateText();
+        show();
+ 
+    }    
     displayEffect();
 }

@@ -8,8 +8,9 @@ LedMatrix::LedMatrix(const uint16_t firstPos, const char* name,cLEDMatrixBase* c
   delete[] _leds;
   _leds = (*_matrix)[0];
   
-  _patterns["clock"]= [](LedObject* ledMatrix) -> LedPattern* { return new ClockPattern(static_cast<LedMatrix*>(ledMatrix)); };
+  _patterns["clock"]= [](LedObject* ledMatrix) -> LedPattern* { return new ClockPattern(static_cast<LedMatrix*>(ledMatrix));};
+  _patterns["rainbowClock"]= [](LedObject* ledMatrix) -> LedPattern* { return new RainbowClockPattern(static_cast<LedMatrix*>(ledMatrix)); };
 
-  _autoplayList.insert(_autoplayList.end(), { "clock" });
+  _autoplayList.insert(_autoplayList.end(), { "clock","rainbowClock" });
 
 }

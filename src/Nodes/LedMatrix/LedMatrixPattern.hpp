@@ -31,5 +31,16 @@ namespace SmartIotInternals {
             unsigned char _txt[5+1];
             uint8_t minutes; 
     };
+    class RainbowClockPattern : public LedMatrixPattern  {
+        friend LedMatrix;
+        public:
+        RainbowClockPattern(LedMatrix* const obj):LedMatrixPattern(obj){};
+        protected:
+            void init() override;
+            void display() override;
+            cLEDText _cTxt;
+            unsigned char _txt[5+1];
+            uint8_t minutes; 
+    };
 
 } // namespace SmartIotInternals
